@@ -1,0 +1,16 @@
+<h1>Game 1</h1>
+
+<button mat-raised-button (click)="initShuffledDeck()">New Deck</button>
+<button mat-raised-button (click)="shuffleDeck()">Shuffle Cards</button>
+<button mat-raised-button (click)="drawCards()">Draw Cards</button>
+
+<ul>
+    <li>{{ deckObj.deck_id }}</li>
+    <li>{{ deckObj.remaining }}</li>
+</ul>
+
+<div cdkDropList cdkDropListOrientation="horizontal" class="container border border-secondary example-list" (cdkDropListDropped)="onTaskDrop($event)">
+    <div class="example-box" *ngFor="let card of cardList" cdkDrag>
+        <img src={{card.image}} alt="Test">
+    </div>
+</div>
