@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Player States</title>
+</head>
+
+<body>
+	<h1>Player States</h1>
+	<table border="1">
+		<thead>
+			<tr>
+				<th>Player Name</th>
+				<th>Current Hand</th>
+				<th>Current Trump</th>
+				<th>Player Beg</th>
+				<th>Round Start</th>
+				<th>Team 1 Score</th>
+				<th>Team 2 Score</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{range $id, $player := .}}
+			<tr>
+				<td>{{$player.name}}</td>
+				<td>{{range $player.state.Hand}}{{.}} {{end}}</td>
+				<td>{{$player.state.CurrTrump}}</td>
+				<td>{{$player.state.PlayerBeg}}</td>
+				<td>{{$player.state.RoundStart}}</td>
+				<td>{{$player.state.Team1Score}}</td>
+				<td>{{$player.state.Team2Score}}</td>
+			</tr>
+			{{end}}
+		</tbody>
+	</table>
+</body>
+
+</html>
