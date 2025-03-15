@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Bring10 Test</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 1rem;
+			margin: 0;
+			padding: 1rem;
+			background-color: #f8f9fa;
+		}
+
+		.header {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		.scores {
+			display: flex;
+			justify-content: space-around;
+			width: 100%;
+			max-width: 400px;
+		}
+
+		.trump-card {
+			width: 60px;
+			height: 90px;
+			border: 2px solid black;
+			border-radius: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-color: white;
+			font-size: 1.2rem;
+			font-weight: bold;
+			text-transform: uppercase;
+		}
+
+		.score {
+			font-size: 1.5rem;
+			font-weight: bold;
+		}
+
+		.player-container {
+			border: 2px solid black;
+			border-radius: 5px;
+			padding: 1rem;
+			margin: 0.5rem 0;
+			width: 300px;
+		}
+
+		.cards {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.5rem;
+			margin-top: 0.5rem;
+		}
+
+		.card {
+			width: 60px;
+			height: 90px;
+			border: 1px solid black;
+			border-radius: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-color: white;
+			font-size: 0.8rem;
+			font-weight: bold;
+			text-align: center;
+		}
+
+		.valid-cards {
+			margin-top: 0.5rem;
+			font-size: 0.9rem;
+			font-style: italic;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="header">
+		<div class="scores">
+			<div class="score" id="team-1-score">Team 1: 0</div>
+			<div class="trump-card" id="trump-card">?</div>
+			<div class="score" id="team-2-score">Team 2: 0</div>
+		</div>
+	</div>
+
+	<div id="sse-data-rt03pl01">
+		<h1>Player 1</h1>
+		<div class="cards"></div>
+		<div class="valid-cards"></div>
+	</div>
+	<div id="sse-data-rt03pl02">
+		<h1>Player 2</h1>
+		<div class="cards"></div>
+		<div class="valid-cards"></div>
+	</div>
+	<div id="sse-data-rt03pl03">
+		<h1>Player 3</h1>
+		<div class="cards"></div>
+		<div class="valid-cards"></div>
+	</div>
+	<div id="sse-data-rt03pl04">
+		<h1>Player 4</h1>
+		<div class="cards"></div>
+		<div class="valid-cards"></div>
+	</div>
+
+	<script>
+		// Constants for roomId and playerIds
+		const roomId = "rt03";
+		const playerIds = ["rt03pl01", "rt03pl02", "rt03pl03", "rt03pl04"];
+
+		const updateTrumpAndScores = (data) => {
+			const trumpCard = document.getElementById('trump-card');
+			const team1Score = document.getElementById('team-1-score');
+			const team2Score = document.getElementById('team-2-score');
+
+			trumpCard.textContent = data.trump;
+			team1Score.textContent = `Team 1: ${data.team_1_score}`;
+			team2Score.textContent = `Team 2: ${data.team_2_score}`;
+		};
+
+		const updatePlayer = (playerId, data) => {
+			const playerContainer = document.getElementById(`sse-data-${playerId}`);
+			const cardsDiv = playerContainer.querySelector('.cards');
+			const validCardsDiv = playerContainer.querySelector('.valid-cards');
+
+			// Update the player's name
+			playerContainer.querySelector('h1').textContent = data.name;
+
+			// Update cards
+			cardsDiv.innerHTML = '';
+			data.hand.forEach(card => {
+				const cardDiv = document.createElement('div');
+				cardDiv.className = 'card';
+				cardDiv.textContent = card;
+				cardsDiv.appendChild(cardDiv);
+			});
+
+			// Update valid cards
+			validCardsDiv.textContent = `Valid cards: ${data.valid_hand.join(', ')}`;
+		};
+
+		// Setup EventSource for each player
+		playerIds.forEach((playerId) => {
+			const eventSourceUrl = `http://localhost:8080/room/${roomId}/${playerId}/state`;
+
+			const eventSource = new EventSource(eventSourceUrl);
+
+			eventSource.onmessage = function (event) {
+				const data = JSON.parse(event.data);
+				console.log(data); // Debugging to check data format
+
+				// Update trump card and scores
+				updateTrumpAndScores(data);
+
+				// Since this is player-specific SSE, directly update the player
+				updatePlayer(playerId, data);
+			};
+		});
+	</script>
+</body>
+
+</html>
