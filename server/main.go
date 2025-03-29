@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gorilla/mux"
 	"math/rand"
 	"net/http"
 	"os"
@@ -12,6 +13,9 @@ import (
 	"strings"
 	"time"
 )
+
+var SCORE_LIMIT int = 5
+var HAND_SIZE int = 3
 
 type httpResponse struct {
 	Success bool        `json:"success"`
@@ -81,6 +85,9 @@ func (c card) cardGameValue() int {
 }
 
 func (c card) MarshalJSON() ([]byte, error) {
+	if c.value == "" && c.suit == "" {
+		return []byte(`""`), nil
+	}
 	return []byte(fmt.Sprintf(`"%sx%s"`, c.value, c.suit)), nil
 }
 
@@ -151,17 +158,13 @@ func (d *deck) shareSelectedCards(idx int) []card {
 }
 
 type gamePlayer struct {
-	pos        int
-	id         string
-	name       string
+	Pos        int    `json:"pos"`
+	Id         string `json:"id"`
+	Name       string `json:"name"`
 	hand       []card
 	validHand  []card
 	team       *team
 	clientChan chan *gameState
-}
-
-func (p *gamePlayer) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%s"`, p.id)), nil
 }
 
 func (p *gamePlayer) removeCardFromHand(playedCard card) {
@@ -187,10 +190,11 @@ func (p *gamePlayer) removeCardFromHand(playedCard card) {
 
 type gameState struct {
 	Name       string        `json:"name"`
+	Position   int           `json:"position"`
 	RoomName   string        `json:"room_name"`
 	Hand       []card        `json:"hand"`
 	ValidHand  []card        `json:"valid_hand"`
-	Deck       *deck         `json:"deck"`
+	Deck       int           `json:"deck"`
 	PlayerTurn int           `json:"curr_turn"`
 	Dealer     int           `json:"dealer"`
 	Players    []*gamePlayer `json:"players"`
@@ -200,6 +204,7 @@ type gameState struct {
 	Lift       []card        `json:"lift"`
 	PlayerBeg  bool          `json:"player_beg"`
 	RoundStart bool          `json:"round_start"`
+	GameStart  bool          `json:"game_start"`
 	PlayerStay bool          `json:"player_stay"`
 	Winner     string        `json:"winner"`
 }
@@ -227,6 +232,7 @@ type room struct {
 	playerStay          bool
 	actionList          [][]string
 	roundStart          bool
+	gameStart           bool
 	lift                []card
 	highCard            card
 	lowCard             card
@@ -247,7 +253,7 @@ func (r *room) addPlayer(player *gamePlayer) error {
 func (r *room) isPlayerInRoom(id string) (*gamePlayer, int, bool) {
 
 	for i, jp := range r.players {
-		if jp.id == id {
+		if jp.Id == id {
 			return r.players[i], i, true
 		}
 	}
@@ -400,13 +406,14 @@ func (r *room) canPlayerSeeHand(playerIdx int, hand []card) []card {
 func (r *room) startGame() {
 
 	for _, p := range r.players {
-		_, p.pos, _ = r.isPlayerInRoom(p.id)
+		_, p.Pos, _ = r.isPlayerInRoom(p.Id)
 	}
 
 	for i := range 4 {
 		r.players[i].team = r.teams[mod(i, 2)]
 	}
 
+	r.roundStart = true
 	r.dealerIdx = rand.Intn(4)
 	r.roundFirstPlayerIdx = mod((r.dealerIdx + 1), 4)
 	r.playerTurn = r.roundFirstPlayerIdx
@@ -415,7 +422,7 @@ func (r *room) startGame() {
 
 	for i := range 4 {
 		p := r.players[mod((r.playerTurn+i), 4)]
-		p.hand = append(p.hand, r.deck.shareCards(1)...)
+		p.hand = append(p.hand, r.deck.shareCards(HAND_SIZE)...)
 	}
 
 	fmt.Printf("dealerIdx: %v\n", r.dealerIdx)
@@ -430,7 +437,7 @@ func (r *room) startGame() {
 }
 
 func (r *room) playerBegAction(player *gamePlayer) {
-	fmt.Printf("player {%v} has begged\n", player.id)
+	fmt.Printf("player {%v} has begged\n", player.Id)
 
 	if r.roundStart == true {
 		fmt.Printf("these actions cannot be taken if the round has started\n")
@@ -455,7 +462,7 @@ func (r *room) playerBegAction(player *gamePlayer) {
 }
 
 func (r *room) playerStayAction(player *gamePlayer) {
-	fmt.Printf("player {%v} has stayed\n", player.id)
+	fmt.Printf("player {%v} has stayed\n", player.Id)
 
 	if r.roundStart == true {
 		fmt.Printf("these actions cannot be taken if the round has started\n")
@@ -473,13 +480,14 @@ func (r *room) playerStayAction(player *gamePlayer) {
 
 	r.playerBeg = false
 	r.playerStay = true
+	r.roundStart = true
 
 	r.broadcastState()
 	return
 }
 
 func (r *room) dealerGiveOneAction(player *gamePlayer) {
-	fmt.Printf("dealer {%v} gave one point\n", player.id)
+	fmt.Printf("dealer {%v} gave one point\n", player.Id)
 
 	if r.roundStart == true {
 		fmt.Printf("these actions cannot be taken if the round has started\n")
@@ -504,7 +512,7 @@ func (r *room) dealerGiveOneAction(player *gamePlayer) {
 }
 
 func (r *room) dealerGoAgain(player *gamePlayer) {
-	fmt.Printf("dealer {%v} go again\n", player.id)
+	fmt.Printf("dealer {%v} go again\n", player.Id)
 
 	if r.roundStart == true {
 		fmt.Printf("cannot go again if the round has started\n")
@@ -528,7 +536,7 @@ func (r *room) dealerGoAgain(player *gamePlayer) {
 		for i := range 4 {
 			p := r.players[mod((r.playerTurn+i), 4)]
 
-			fmt.Printf("deal 1 cards to player: %s\n", p.id)
+			fmt.Printf("deal 1 cards to player: %s\n", p.Id)
 			p.hand = append(p.hand, r.deck.shareCards(3)...)
 		}
 
@@ -584,7 +592,7 @@ func (r *room) checkHighPoint(playedCard card) {
 	}
 
 	if r.highCard == (card{}) {
-		fmt.Println("No card set for high card")
+		fmt.Println("First trump played. Give high point")
 		r.highCard = playedCard
 		return
 	}
@@ -603,11 +611,12 @@ func (r *room) checkLowPoint(playedCard card) {
 	fmt.Printf("Check Low Point. Played: %+v\tTrump: %+v\n", playedCard.suit, r.trump.suit)
 
 	if playedCard.suit != r.trump.suit {
+		fmt.Println("Not right suit")
 		return
 	}
 
 	if r.lowCard == (card{}) {
-		fmt.Println("No card set for low card")
+		fmt.Println("First trump played. Give low point")
 		r.lowCard = playedCard
 		return
 	}
@@ -709,13 +718,13 @@ func (r *room) addGamePointScore() {
 
 func (r *room) isGameOver() bool {
 
-	if r.players[0].team.score >= 2 {
+	if r.players[0].team.score >= SCORE_LIMIT {
 		fmt.Printf("%v is the winner!", r.players[0].team.name)
 		r.winner = r.players[0].team
 		return true
 	}
 
-	if r.players[1].team.score >= 2 {
+	if r.players[1].team.score >= SCORE_LIMIT {
 		fmt.Printf("%v is the winner!", r.players[1].team.name)
 		r.winner = r.players[1].team
 		return true
@@ -789,13 +798,13 @@ func (r *room) setupNextRound() {
 
 	r.lift = []card{}
 	r.dealerIdx = mod(r.dealerIdx+1, 4)
-	r.playerTurn = mod(r.dealerIdx+1, 4)
+	r.playerTurn = mod(r.roundFirstPlayerIdx+1, 4)
 	r.deck = r.deck.newDeck()
 	r.deck.shuffle()
 
 	for i := range 4 {
 		p := r.players[mod((r.playerTurn+i), 4)]
-		p.hand = append(p.hand, r.deck.shareCards(1)...)
+		p.hand = append(p.hand, r.deck.shareCards(HAND_SIZE)...)
 	}
 
 	fmt.Printf("dealerIdx: %v\n", r.dealerIdx)
@@ -865,10 +874,11 @@ func (r *room) broadcastState() {
 
 		newGameState := &gameState{
 			RoomName:   r.name,
-			Name:       player.name,
-			Hand:       r.canPlayerSeeHand(player.pos, player.hand),
-			ValidHand:  r.canPlayerSeeHand(player.pos, player.validHand),
-			Deck:       r.deck,
+			Name:       player.Name,
+			Position:   player.Pos,
+			Hand:       r.canPlayerSeeHand(player.Pos, player.hand),
+			ValidHand:  r.canPlayerSeeHand(player.Pos, player.validHand),
+			Deck:       len(r.deck),
 			Dealer:     r.dealerIdx,
 			PlayerTurn: r.playerTurn,
 			Players:    r.players,
@@ -879,6 +889,7 @@ func (r *room) broadcastState() {
 			PlayerBeg:  r.playerBeg,
 			PlayerStay: r.playerStay,
 			RoundStart: r.roundStart,
+			GameStart:  r.gameStart,
 			Winner: func() string {
 				if r.winner != nil {
 					return r.winner.name
@@ -892,7 +903,7 @@ func (r *room) broadcastState() {
 }
 
 func (r *room) processAction(player *gamePlayer, playerAction, cardPlayed string) {
-	fmt.Printf("procees: %v, %v, %v\n", player.id, playerAction, cardPlayed)
+	fmt.Printf("procees: %v, %v, %v\n", player.Id, playerAction, cardPlayed)
 
 	switch playerAction {
 	case "BEG":
@@ -957,7 +968,12 @@ func (rm *roomManager) generatePlayerId(length int) (string, error) {
 // Create a new room and assign host to the new room
 func (rm *roomManager) addNewRoom(w http.ResponseWriter, r *http.Request) {
 
-	enableCors(&w, r)
+	enableCors(w, r)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 
 	//Define structure of request body
 	defer r.Body.Close()
@@ -1025,7 +1041,7 @@ func (rm *roomManager) addNewRoom(w http.ResponseWriter, r *http.Request) {
 	rm.rooms[roomId] = newRoom
 
 	//Player/Host joins the room they created
-	hostGamePlayer := &gamePlayer{id: hostId, name: hostName, hand: []card{}, clientChan: make(chan *gameState)}
+	hostGamePlayer := &gamePlayer{Id: hostId, Name: hostName, hand: []card{}, clientChan: make(chan *gameState)}
 	newRoom.host = hostGamePlayer
 	newRoom.addPlayer(hostGamePlayer)
 
@@ -1048,9 +1064,15 @@ func (rm *roomManager) addNewRoom(w http.ResponseWriter, r *http.Request) {
 // Add player to the respective room's list of players
 func (rm *roomManager) joinRoom(w http.ResponseWriter, r *http.Request) {
 
-	enableCors(&w, r)
+	enableCors(w, r)
 
-	roomId := r.PathValue("id")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	vars := mux.Vars(r)
+	roomId := vars["id"]
 	currRoom, roomFound := rm.rooms[roomId]
 
 	//NOTE: Add response for room not found
@@ -1092,7 +1114,7 @@ func (rm *roomManager) joinRoom(w http.ResponseWriter, r *http.Request) {
 	// playerId := joinRoomReqBody.PlayerId
 	playerId, _ := rm.generatePlayerId(6)
 	playerName := joinRoomReqBody.PlayerName
-	newPlayer := &gamePlayer{id: playerId, name: playerName, hand: []card{}, clientChan: make(chan *gameState)}
+	newPlayer := &gamePlayer{Id: playerId, Name: playerName, hand: []card{}, clientChan: make(chan *gameState)}
 
 	if _, _, err := currRoom.isPlayerInRoom(playerId); err == true {
 		fmt.Println("This player is already in the room")
@@ -1132,10 +1154,16 @@ func (rm *roomManager) joinRoom(w http.ResponseWriter, r *http.Request) {
 
 func (rm *roomManager) startGame(w http.ResponseWriter, r *http.Request) {
 
-	enableCors(&w, r)
+	enableCors(w, r)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	fmt.Println("starting room game")
 
-	roomId := r.PathValue("id")
+	vars := mux.Vars(r)
+	roomId := vars["id"]
 	currRoom, roomFound := rm.rooms[roomId]
 
 	//NOTE: Add response for room not found
@@ -1194,10 +1222,19 @@ func (rm *roomManager) startGame(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rm *roomManager) processGameAction(w http.ResponseWriter, r *http.Request) {
+
+	enableCors(w, r)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	fmt.Println("process game action")
 
-	roomId := r.PathValue("roomId")
-	playerId := r.PathValue("playerId")
+	vars := mux.Vars(r)
+	roomId := vars["roomId"]
+	playerId := vars["playerId"]
 	currRoom, roomFound := rm.rooms[roomId]
 
 	//NOTE: Add response for room not found
@@ -1231,12 +1268,18 @@ func (rm *roomManager) processGameAction(w http.ResponseWriter, r *http.Request)
 
 	message := "Action Successful"
 	response := map[string]string{}
+
 	sendResponse(w, http.StatusOK, true, message, response, nil)
 }
 
 func (rm *roomManager) getRooms(w http.ResponseWriter, r *http.Request) {
 
-	enableCors(&w, r)
+	enableCors(w, r)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 
 	type simpleRoomDetails struct {
 		ID         string `json:"id"`
@@ -1248,7 +1291,7 @@ func (rm *roomManager) getRooms(w http.ResponseWriter, r *http.Request) {
 	rooms := map[string]simpleRoomDetails{}
 
 	for _, r := range rm.rooms {
-		rooms[r.id] = simpleRoomDetails{ID: r.id, Name: r.name, Host: r.host.name, NumPlayers: len(r.players)}
+		rooms[r.id] = simpleRoomDetails{ID: r.id, Name: r.name, Host: r.host.Name, NumPlayers: len(r.players)}
 	}
 
 	message := "Rooms returned! :)"
@@ -1259,11 +1302,19 @@ func (rm *roomManager) getRooms(w http.ResponseWriter, r *http.Request) {
 
 func (rm *roomManager) sseGameStateHandler(w http.ResponseWriter, r *http.Request) {
 
-	enableCors(&w, r)
+	enableCors(w, r)
 
-	roomId := r.PathValue("roomId")
-	playerId := r.PathValue("playerId")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	vars := mux.Vars(r)
+	roomId := vars["roomId"]
+	playerId := vars["playerId"]
 	currRoom, roomFound := rm.rooms[roomId]
+
+	fmt.Printf("%v, %v", roomId, playerId)
 
 	//NOTE: Add response for room not found
 	if roomFound != true {
@@ -1319,7 +1370,12 @@ func (rm *roomManager) sseGameStateHandler(w http.ResponseWriter, r *http.Reques
 
 // Simple Greeting when the home page is run
 func greetPlayer(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w, r)
+	enableCors(w, r)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 
 	fmt.Printf("Welcome to BringTen! Server Side\n")
 
@@ -1328,16 +1384,11 @@ func greetPlayer(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func enableCors(w *http.ResponseWriter, r *http.Request) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
-	(*w).Header().Set("Access-Control-Allow-Credentials", "true")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-
-	if r.Method == "OPTIONS" {
-		(*w).WriteHeader(http.StatusNoContent)
-		return
-	}
+func enableCors(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 }
 
 func main() {
@@ -1346,18 +1397,18 @@ func main() {
 		rooms: make(map[string]*room),
 	}
 
-	mux := http.NewServeMux() // Routes request to approriate handler
-	mux.HandleFunc("GET /", greetPlayer)
-	mux.HandleFunc("POST /rooms", roomManager.addNewRoom)
-	mux.HandleFunc("POST /rooms/{id}/join", roomManager.joinRoom)
-	mux.HandleFunc("POST /rooms/{id}/start", roomManager.startGame)
-	mux.HandleFunc("POST /rooms/{roomId}/{playerId}/action", roomManager.processGameAction)
-	mux.HandleFunc("GET /rooms", roomManager.getRooms)
-	mux.HandleFunc("GET /rooms/{roomId}/{playerId}/state", roomManager.sseGameStateHandler)
+	r := mux.NewRouter()
+	r.HandleFunc("/", greetPlayer).Methods("GET")
+	r.HandleFunc("/rooms", roomManager.addNewRoom).Methods("POST")
+	r.HandleFunc("/rooms/{id}/join", roomManager.joinRoom).Methods("POST")
+	r.HandleFunc("/rooms/{id}/start", roomManager.startGame).Methods("POST")
+	r.HandleFunc("/rooms/{roomId}/{playerId}/action", roomManager.processGameAction).Methods("POST", "OPTIONS")
+	r.HandleFunc("/rooms", roomManager.getRooms).Methods("GET")
+	r.HandleFunc("/rooms/{roomId}/{playerId}/state", roomManager.sseGameStateHandler).Methods("GET")
 
 	fmt.Println("Server is up!")
 
-	err := http.ListenAndServe(":8080", mux)
+	err := http.ListenAndServe(":8080", r)
 
 	if errors.Is(err, http.ErrServerClosed) {
 		fmt.Printf("server closed\n")

@@ -11,7 +11,7 @@
 	let activeTab = $state('join');
 </script>
 
-<div class="flex flex-col border border-blue-400">
+<div class="flex max-w-[85%] flex-1 flex-col border border-blue-400">
 	<span>Game Tabs</span>
 	<div class="flex gap-x-2">
 		{#each tabs as tab}
