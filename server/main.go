@@ -878,7 +878,7 @@ func (r *room) broadcastState() {
 			Position:   player.Pos,
 			Hand:       r.canPlayerSeeHand(player.Pos, player.hand),
 			ValidHand:  r.canPlayerSeeHand(player.Pos, player.validHand),
-			Deck:       len(r.deck),
+			Deck:       len(r.deck.cards),
 			Dealer:     r.dealerIdx,
 			PlayerTurn: r.playerTurn,
 			Players:    r.players,
