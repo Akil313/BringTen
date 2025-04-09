@@ -1408,8 +1408,6 @@ func main() {
 
 	fmt.Println("Server is up!")
 
-	fmt.Println("Attempting to start server on :8080")
-
 	err := http.ListenAndServe(":8080", r)
 
 	if errors.Is(err, http.ErrServerClosed) {
