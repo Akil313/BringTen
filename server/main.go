@@ -5,17 +5,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gorilla/mux"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 var SCORE_LIMIT int = 5
 var HAND_SIZE int = 3
+var allowedOrigins []string
 
 type httpResponse struct {
 	Success bool        `json:"success"`
@@ -1385,10 +1389,42 @@ func greetPlayer(w http.ResponseWriter, r *http.Request) {
 }
 
 func enableCors(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	origin := r.Header.Get("Origin")
+
+	if isAllowedOrigin(origin) {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	}
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+}
+
+func isAllowedOrigin(origin string) bool {
+	for _, o := range allowedOrigins {
+		if o == origin {
+			return true
+		}
+	}
+	return false
+}
+
+func init() {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No .env file found or couldn't load the .env file")
+	}
+
+	origins := os.Getenv("ORIGINS")
+	if origins != "" {
+		allowedOrigins = strings.Split(origins, ",")
+	}
+
 }
 
 func main() {

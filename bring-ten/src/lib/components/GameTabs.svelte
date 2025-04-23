@@ -2,6 +2,8 @@
 	import CreateGame from './CreateGame.svelte';
 	import JoinGame from './JoinGame.svelte';
 
+	let props = $props();
+
 	const tabs = [
 		{ id: 'join', label: 'Join' },
 		{ id: 'create', label: 'Create' }
@@ -30,7 +32,7 @@
 			<CreateGame />
 		{/if}
 		{#if activeTab === 'join'}
-			<JoinGame />
+			<JoinGame rooms={props.rooms} />
 		{/if}
 	</div>
 </div>

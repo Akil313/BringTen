@@ -29,6 +29,6 @@ coverage
 # Optional eslint cache
 .eslintcache
 
-tmp
+tmp/
 
 benchmarking/compare/.results

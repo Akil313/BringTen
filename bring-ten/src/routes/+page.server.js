@@ -2,11 +2,15 @@ import { redirect } from '@sveltejs/kit';
 import { fail } from '@sveltejs/kit';
 import * as db from '$lib/server/database'
 import * as utils from '$lib/utils'
+import { useRooms } from '$lib/rooms.svelte';
 
-export async function load() {
-
-	//db.refreshRoomList()
-	//db.sendGetEvent()
+/** @type {import('./$types').PageServerLoad} */
+export async function load({ params }) {
+	const { fetchRooms } = useRooms();
+	const roomList = await fetchRooms();
+	return {
+		rooms: roomList,
+	};
 }
 
 /** @param {string} cookieString */

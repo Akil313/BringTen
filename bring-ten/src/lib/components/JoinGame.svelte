@@ -1,9 +1,11 @@
 <script>
-	import { roomState } from '$lib/rooms.svelte';
+	import { useRooms } from '$lib/rooms.svelte';
 	import RoomTable from './RoomTable.svelte';
 
 	let roomId = $state('');
-	$inspect(roomId);
+
+	/** @type {import('../../routes/$types').PageData} */
+	let props = $props();
 
 	/** @param {CustomEvent<string>} event */
 	function handleRoomJoin(event) {
@@ -28,7 +30,7 @@
 			<div class="mb-4">
 				<input type="hidden" name="rooms" bind:value={roomId} />
 				<RoomTable
-					rooms={roomState.rooms}
+					rooms={props.rooms}
 					joinRoom={(id) => {
 						roomId = id;
 					}}
