@@ -5,12 +5,12 @@
 	let props = $props();
 
 	const tabs = [
-		{ id: 'join', label: 'Join' },
-		{ id: 'create', label: 'Create' }
+		{ id: 'join_game_tab', label: 'Join' },
+		{ id: 'create_game_tab', label: 'Create' }
 	];
 
 	/** @param {string} activeTab */
-	let activeTab = $state('join');
+	let activeTab = $state('join_game_tab');
 </script>
 
 <div class="flex max-w-[85%] flex-1 flex-col border border-blue-400">
@@ -20,6 +20,7 @@
 			<button
 				class="px-x cursor-pointer py-2 transition-colors duration-200"
 				class:bg-blue-400={activeTab == tab.id}
+				id={tab.id}
 				onclick={() => (activeTab = tab.id)}
 			>
 				{tab.label}
@@ -28,10 +29,10 @@
 	</div>
 	<div class="my-2 h-1 bg-blue-200"></div>
 	<div>
-		{#if activeTab === 'create'}
+		{#if activeTab === 'create_game_tab'}
 			<CreateGame />
 		{/if}
-		{#if activeTab === 'join'}
+		{#if activeTab === 'join_game_tab'}
 			<JoinGame rooms={props.rooms} />
 		{/if}
 	</div>

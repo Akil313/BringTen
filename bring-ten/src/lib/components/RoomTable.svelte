@@ -27,8 +27,12 @@
 					{/each}
 					<td>
 						<button
-							class="focus:shadow-outline w-full rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none"
-							onclick={() => joinRoom(r.id)}
+							disabled={r.numPlayers == 4}
+							class="focus:shadow-outline w-full rounded {r.numPlayers < 4
+								? 'cursor-pointer bg-blue-500 hover:bg-blue-700'
+								: 'cursor-default bg-gray-300 hover:bg-gray-400'}
+							px-4 py-2 font-bold text-white focus:outline-none"
+							onclick={r.numPlayers < 4 ? () => joinRoom(r.id) : () => {}}
 						>
 							Join
 						</button>

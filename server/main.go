@@ -417,7 +417,8 @@ func (r *room) startGame() {
 		r.players[i].team = r.teams[mod(i, 2)]
 	}
 
-	r.roundStart = true
+	r.gameStart = true
+	r.roundStart = false
 	r.dealerIdx = rand.Intn(4)
 	r.roundFirstPlayerIdx = mod((r.dealerIdx + 1), 4)
 	r.playerTurn = r.roundFirstPlayerIdx

@@ -185,6 +185,7 @@
 				card_played: cardPlayed
 			})
 		});
+		return;
 	}
 
 	let { data } = $props();
@@ -294,6 +295,9 @@
 			</div>
 		</div>
 		{#if !gameState.roundStart}
+			<span>{gameState.position === gameState.currTurn}</span>
+			<span>{gameState.gameStart}</span>
+			<span>{!gameState.playerBeg}</span>
 			{#if gameState.position === gameState.currTurn && gameState.gameStart && gameState.playerBeg === false}
 				<div class="flex w-full flex-row justify-around">
 					<button
@@ -320,16 +324,26 @@
 			{/if}
 		{/if}
 		<button
-			onclick={() => handleAction('PLAY_CARD', selectedCard)}
-			class="rounded-lg border border-blue-500 bg-blue-300 p-2"
+			type="button"
+			aria-label="Button"
+			disabled={gameState.currTurn !== gameState.position}
+			onclick={gameState.currTurn === gameState.position
+				? () => handleAction('PLAY_CARD', selectedCard)
+				: () => {}}
+			class="rounded-lg border border-blue-500 {gameState.currTurn === gameState.position
+				? 'bg-blue-300'
+				: 'bg-gray-300'} p-2"
 		>
 			Submit Card
 		</button>
 	</div>
 	<div class="flex flex-col">
+		<span>position: {gameState.position}</span>
+		<span>currTurn: {gameState.currTurn}</span>
 		<span>playerBeg: {gameState.playerBeg}</span>
 		<span>playerStay: {gameState.playerStay}</span>
 		<span>roundStart: {gameState.roundStart}</span>
+		<span>gameStart: {gameState.gameStart}</span>
 		<span>winner: {gameState.winner}</span>
 		<span>players: {JSON.stringify(gameState.players)}</span>
 	</div>

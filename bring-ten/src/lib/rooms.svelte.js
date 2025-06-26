@@ -6,10 +6,11 @@
  * @property {number} numPlayers
  */
 
+/**
+ * @typedef {Object<string, Room>} RoomList
+ */
+
 export function useRooms() {
-	/**
-	 * @typedef {Object<string, Room>} RoomList
-	 */
 	let rooms = $state({})
 
 	$effect(() => {

@@ -9,5 +9,8 @@
 </script>
 
 <div class="flex justify-center">
+	<header>
+		<title>BringTen</title>
+	</header>
 	<GameTabs {rooms} />
 </div>

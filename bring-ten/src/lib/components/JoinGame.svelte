@@ -22,7 +22,7 @@
 					placeholder="Username"
 					type="text"
 					class="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
-					id="username"
+					id="join_game_username"
 					name="name"
 					required
 				/>

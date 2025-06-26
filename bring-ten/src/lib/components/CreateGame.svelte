@@ -12,7 +12,7 @@
 					placeholder="Username"
 					type="text"
 					class="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
-					id="username"
+					id="create_game_username"
 					name="name"
 					bind:value={username}
 				/>
@@ -25,7 +25,7 @@
 					placeholder="Room Name"
 					type="text"
 					class="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
-					id="room_name"
+					id="create_game_room_name"
 					name="room_name"
 					bind:value={roomName}
 				/>
@@ -34,6 +34,7 @@
 				<button
 					class="focus:shadow-outline w-full rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none"
 					type="submit"
+					id="create_game_submit"
 				>
 					Create Game Room
 				</button>
