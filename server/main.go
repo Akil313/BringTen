@@ -20,7 +20,9 @@ import (
 var SCORE_LIMIT int = 6
 var HAND_SIZE int = 6
 var EXPIRED_TIME float64 = 15.0
-var allowedOrigins []string
+var allowedOrigins = []string{
+	"http://165.227.221.32:3000",
+}
 
 type httpResponse struct {
 	Success bool        `json:"success"`
@@ -1494,6 +1496,29 @@ func isAllowedOrigin(origin string) bool {
 	return false
 }
 
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
+		if isAllowedOrigin(origin) {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+			w.Header().Set("Vary", "Origin")
+		}
+
+		// Short-circuit preflight requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// Call the actual handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 func init() {
 
 	err := godotenv.Load()
@@ -1540,7 +1565,7 @@ func main() {
 		}
 	}()
 
-	err := http.ListenAndServe(":8080", r)
+	err := http.ListenAndServe(":8080", withCORS(r))
 
 	if errors.Is(err, http.ErrServerClosed) {
 		fmt.Printf("server closed\n")
