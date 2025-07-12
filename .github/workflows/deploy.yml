@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy over SSH
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.DO_HOST }}
-        username: ${{ secrets.DO_USER }}
-        key: ${{ secrets.DO_SSH_KEY }}
-        script: |
-          cd /home/github/projects/BringTen
-          git pull origin main
-          docker compose down
-          docker compose up -d --build
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            cd /home/github/projects/BringTen
+            git pull origin main
+            docker compose down
+            docker compose up -d --build
