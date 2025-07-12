@@ -1,6 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
 	import PlayingCard from '$lib/components/PlayingCard.svelte';
+	// @ts-ignore
+	import Scalable from 'scalable';
 
 	/** @typedef {Object} GameState
 	 * @property {string} name
@@ -217,10 +219,21 @@
 
 	/** @type {Object<string, Boolean>} */
 	const playerHand = $derived(updatePlayerHand(gameState.hand, gameState.validHand));
-	$inspect(gameState, playerHand);
+
+	/** @type {HTMLElement} */
+	let main_container;
+	/** @type {HTMLElement} */
+	let canvas;
+	/** @type {{ destroy?: () => void }} */
+	let scalableInstance;
 
 	// Set up EventSource when component mounts
 	onMount(() => {
+		scalableInstance = new Scalable(main_container, {
+			align: 'center',
+			verticalAlign: 'center',
+			maxScale: 1.3
+		});
 		if (roomId !== 'test') {
 			const eventSource = new EventSource(sseUrl);
 
@@ -231,8 +244,6 @@
 
 				// Update the store with the new game state
 				gameState = { ...updateGameState(state) };
-				//playerHand = updatePlayerHand(gameState.hand, gameState.validHand);
-				//console.log(playerHand);
 			};
 
 			eventSource.onerror = function (error) {
@@ -242,119 +253,203 @@
 
 			// Clean up the EventSource when the component is destroyed
 			return () => {
+				scalableInstance?.destroy?.();
 				eventSource.close();
 			};
 		}
 	});
 </script>
 
-<div class="flex h-screen flex-col px-4">
-	<h1 class="text-2xl">{gameState.roomName}</h1>
-	<span># of Players: {gameState.players.length} / 4</span>
-	<div class="flex justify-around">
-		<span>{gameState.name}</span>
-		<span>Player Turn: {gameState.players[gameState.currTurn].name}</span>
-	</div>
-	<div class="flex flex-col justify-around border border-blue-500">
-		<div>
-			<span>Trump:</span>
-			<PlayingCard
-				cardString={gameState.trump}
-				selectCard={handleSelectCard}
-				isSelected={false}
-				isPlayable={false}
-			/>
-		</div>
-		<div class="flex flex-initial border border-green-600">
-			<PlayingCard
-				cardString={'back'}
-				selectCard={handleSelectCard}
-				isSelected={false}
-				isPlayable={false}
-			/>
-			<span class="translate-8 absolute">{gameState.deck}</span>
-		</div>
-		<div class="flex-col">
-			<span class="">Lift:</span>
-			{#each gameState.lift as c}
-				<PlayingCard cardString={c} selectCard={() => {}} isSelected={false} isPlayable={false} />
-			{/each}
-		</div>
-		<div class="flex flex-col">
-			<span>Hand: </span>
-			<div class="">
-				{#each gameState.hand as c (c)}
-					<PlayingCard
-						cardString={c}
-						selectCard={handleSelectCard}
-						isSelected={selectedCard === c}
-						isValid={playerHand[c]}
-						isPlayable={true}
-					/>
-				{/each}
+<div
+	id="main-container"
+	class="flex h-screen w-screen overflow-hidden bg-[#00131a] bg-[url(/imgs/cartographer.png)] text-lg"
+	bind:this={main_container}
+>
+	<div
+		id="canvas"
+		class="flex h-[720px] w-[1280px] bg-[#005c1d] bg-[url(/imgs/first-aid-kit.png)]"
+		bind:this={canvas}
+	>
+		<div id="left-info-ctn" class="flex basis-1/6 flex-col px-4 pt-4">
+			<span class="text-[1.5em]">{gameState.roomName}</span>
+			<span class="text-[0.8em]"># of Players: {gameState.players.length} / 4</span>
+			<div class="flex flex-grow flex-col items-center justify-around">
+				<div class="flex flex-col items-center gap-y-4">
+					<span class="text-[1.2em]">Team 1 Points</span>
+					<p class="text-[1.5em]">{gameState.team1Score}</p>
+				</div>
+				<div class="flex flex-col items-center gap-y-4">
+					<p class="text-[1.5em]">{gameState.team2Score}</p>
+					<span class="text-[1.2em]">Team 2 Points</span>
+				</div>
 			</div>
 		</div>
-		{#if !gameState.roundStart}
-			<span>{gameState.position === gameState.currTurn}</span>
-			<span>{gameState.gameStart}</span>
-			<span>{!gameState.playerBeg}</span>
-			{#if gameState.position === gameState.currTurn && gameState.gameStart && gameState.playerBeg === false}
-				<div class="flex w-full flex-row justify-around">
-					<button
-						onclick={() => handleAction('STAY')}
-						class="rounded-lg border border-blue-500 bg-blue-300 p-2">Stay</button
-					>
-					<button
-						onclick={() => handleAction('BEG')}
-						class="rounded-lg border border-blue-500 bg-blue-300 p-2">Beg</button
-					>
+		<div id="play-field-ctn" class="flex basis-4/6 flex-col justify-around border border-blue-500">
+			<div class="flex justify-around">
+				<span class="text-[1em]">{gameState.name}</span>
+				<span>Player Turn: {gameState.players[gameState.currTurn].name}</span>
+			</div>
+			<div class="flex justify-between border border-green-600">
+				<div>
+					<span class="text-[12%]">Trump:</span>
+					<PlayingCard
+						cardString={gameState.trump}
+						selectCard={handleSelectCard}
+						isSelected={false}
+						isPlayable={false}
+					/>
 				</div>
-			{/if}
-			{#if gameState.position === gameState.dealer && gameState.gameStart && gameState.playerBeg === true}
-				<div class="flex w-full flex-row justify-around">
-					<button
-						onclick={() => handleAction('GO_AGAIN')}
-						class="rounded-lg border border-blue-500 bg-blue-300 p-2">Go Again</button
-					>
-					<button
-						onclick={() => handleAction('GIVE_ONE')}
-						class="rounded-lg border border-blue-500 bg-blue-300 p-2">Give 1</button
-					>
+				<div>
+					<span class="translate-8 absolute">{gameState.deck}</span>
+					<PlayingCard
+						class="opacity-50 blur-[2px]"
+						cardString={'back'}
+						selectCard={handleSelectCard}
+						isSelected={false}
+						isPlayable={false}
+					/>
 				</div>
+			</div>
+			<div class="flex border border-red-400">
+				<span class="pr-4">LIFT: </span>
+				<div class="flex gap-x-4">
+					{#if gameState.lift?.[0] === undefined}
+						<div
+							class="flex h-32 w-24 items-center justify-center rounded border-2 bg-gray-200 bg-opacity-40"
+						>
+							Player 1
+						</div>
+					{:else}
+						<PlayingCard
+							class=""
+							cardString={gameState.lift[0]}
+							selectCard={handleSelectCard}
+							isSelected={false}
+							isPlayable={false}
+						/>
+					{/if}
+					{#if gameState.lift?.[1] === undefined}
+						<div
+							class="flex h-32 w-24 items-center justify-center rounded border-2 bg-gray-400 bg-opacity-40"
+						>
+							Player 2
+						</div>
+					{:else}
+						<PlayingCard
+							class=""
+							cardString={gameState.lift[1]}
+							selectCard={handleSelectCard}
+							isSelected={false}
+							isPlayable={false}
+						/>
+					{/if}
+					{#if gameState.lift?.[2] === undefined}
+						<div
+							class="flex h-32 w-24 items-center justify-center rounded border-2 bg-gray-200 bg-opacity-40"
+						>
+							Player 3
+						</div>
+					{:else}
+						<PlayingCard
+							class=""
+							cardString={gameState.lift[2]}
+							selectCard={handleSelectCard}
+							isSelected={false}
+							isPlayable={false}
+						/>
+					{/if}
+					{#if gameState.lift?.[3] === undefined}
+						<div
+							class="flex h-32 w-24 items-center justify-center rounded border-2 bg-gray-400 bg-opacity-40"
+						>
+							Player 4
+						</div>
+					{:else}
+						<PlayingCard
+							class=""
+							cardString={gameState.lift[3]}
+							selectCard={handleSelectCard}
+							isSelected={false}
+							isPlayable={false}
+						/>
+					{/if}
+				</div>
+			</div>
+			<div class="flex flex-col">
+				<span>Hand: </span>
+				<div class="">
+					{#each gameState.hand as c (c)}
+						<PlayingCard
+							cardString={c}
+							selectCard={handleSelectCard}
+							isSelected={selectedCard === c}
+							isValid={playerHand[c]}
+							isPlayable={true}
+						/>
+					{/each}
+				</div>
+			</div>
+			{#if !gameState.roundStart}
+				{#if gameState.position === gameState.currTurn && gameState.gameStart && gameState.playerBeg === false}
+					<div class="flex w-full flex-row justify-around">
+						<button
+							onclick={() => handleAction('STAY')}
+							class="rounded-lg border border-blue-500 bg-blue-300 p-2">Stay</button
+						>
+						<button
+							onclick={() => handleAction('BEG')}
+							class="rounded-lg border border-blue-500 bg-blue-300 p-2">Beg</button
+						>
+					</div>
+				{/if}
+				{#if gameState.position === gameState.dealer && gameState.gameStart && gameState.playerBeg === true}
+					<div class="flex w-full flex-row justify-around">
+						<button
+							onclick={() => handleAction('GO_AGAIN')}
+							class="rounded-lg border border-blue-500 bg-blue-300 p-2">Go Again</button
+						>
+						<button
+							onclick={() => handleAction('GIVE_ONE')}
+							class="rounded-lg border border-blue-500 bg-blue-300 p-2">Give 1</button
+						>
+					</div>
+				{/if}
 			{/if}
-		{/if}
-		<button
-			type="button"
-			aria-label="Button"
-			disabled={gameState.currTurn !== gameState.position}
-			onclick={gameState.currTurn === gameState.position
-				? () => handleAction('PLAY_CARD', selectedCard)
-				: () => {}}
-			class="rounded-lg border border-blue-500 {gameState.currTurn === gameState.position
-				? 'bg-blue-300'
-				: 'bg-gray-300'} p-2"
-		>
-			Submit Card
-		</button>
-	</div>
-	<div class="flex flex-col">
-		<span>position: {gameState.position}</span>
-		<span>currTurn: {gameState.currTurn}</span>
-		<span>playerBeg: {gameState.playerBeg}</span>
-		<span>playerStay: {gameState.playerStay}</span>
-		<span>roundStart: {gameState.roundStart}</span>
-		<span>gameStart: {gameState.gameStart}</span>
-		<span>winner: {gameState.winner}</span>
-		<span>players: {JSON.stringify(gameState.players)}</span>
-	</div>
+			<button
+				type="button"
+				aria-label="Button"
+				disabled={gameState.currTurn !== gameState.position || gameState.roundStart !== true}
+				onclick={gameState.currTurn === gameState.position
+					? () => handleAction('PLAY_CARD', selectedCard)
+					: () => {}}
+				class="rounded-lg border border-blue-500 {gameState.currTurn === gameState.position &&
+				gameState.roundStart === true
+					? 'bg-blue-300'
+					: 'bg-gray-300'} p-2"
+			>
+				Submit Card
+			</button>
 
-	<button
-		disabled={gameState.players.length !== 4}
-		onclick={startGameHandler}
-		class="rounded-lg border border-blue-500 p-2 {gameState.players.length !== 4
-			? 'bg-gray-200'
-			: 'bg-blue-300'}"
-	>
-		Start Game
-	</button>
+			{#if gameState?.gameStart === false}
+				<button
+					disabled={gameState.players.length !== 4}
+					onclick={startGameHandler}
+					class="rounded-lg border border-blue-500 p-2 {gameState.players.length !== 4
+						? 'bg-gray-200'
+						: 'bg-blue-300'}"
+				>
+					Start Game
+				</button>
+			{/if}
+		</div>
+		<div class="flex grow-0 basis-1/6 flex-col">
+			<span>position: {gameState.position}</span>
+			<span>currTurn: {gameState.currTurn}</span>
+			<span>playerBeg: {gameState.playerBeg}</span>
+			<span>playerStay: {gameState.playerStay}</span>
+			<span>roundStart: {gameState.roundStart}</span>
+			<span>gameStart: {gameState.gameStart}</span>
+			<span>winner: {gameState.winner}</span>
+		</div>
+	</div>
 </div>

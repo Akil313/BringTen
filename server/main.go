@@ -17,7 +17,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var SCORE_LIMIT int = 5
+var SCORE_LIMIT int = 3
 var HAND_SIZE int = 3
 var allowedOrigins []string
 
@@ -244,12 +244,33 @@ type room struct {
 	jackPoint           *team
 	hangJackPoint       *team
 	winner              *team
+	lastActionTime      time.Time
+}
+
+func (r *room) updateLastActionTime() error {
+
+	r.lastActionTime = time.Now()
+
+	return nil
+}
+
+func (r *room) isRoomExpired() bool {
+
+	elapsed := time.Since(r.lastActionTime)
+	minsElapsed := elapsed.Minutes()
+
+	if minsElapsed >= 30.0 {
+		return true
+	}
+
+	return false
 }
 
 // Adds player to the room
 func (r *room) addPlayer(player *gamePlayer) error {
 
 	r.players = append(r.players, player)
+	r.updateLastActionTime()
 	return nil
 }
 
@@ -437,6 +458,8 @@ func (r *room) startGame() {
 	r.trump = r.deck.shareCards(1)[0]
 	fmt.Printf("New Trump: %v\n", r.trump)
 	r.checkKickPoints()
+
+	r.updateLastActionTime()
 
 	return
 }
@@ -803,7 +826,8 @@ func (r *room) setupNextRound() {
 
 	r.lift = []card{}
 	r.dealerIdx = mod(r.dealerIdx+1, 4)
-	r.playerTurn = mod(r.roundFirstPlayerIdx+1, 4)
+	r.roundFirstPlayerIdx = mod((r.dealerIdx + 1), 4)
+	r.playerTurn = r.roundFirstPlayerIdx
 	r.deck = r.deck.newDeck()
 	r.deck.shuffle()
 
@@ -926,6 +950,8 @@ func (r *room) processAction(player *gamePlayer, playerAction, cardPlayed string
 	default:
 	}
 
+	r.updateLastActionTime()
+
 	return
 }
 
@@ -1043,6 +1069,8 @@ func (rm *roomManager) addNewRoom(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
+	newRoom.updateLastActionTime()
+
 	rm.rooms[roomId] = newRoom
 
 	//Player/Host joins the room they created
@@ -1155,6 +1183,55 @@ func (rm *roomManager) joinRoom(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, http.StatusOK, true, message, response, nil)
 
 	fmt.Printf("player {%v} joined room {%v}\n", playerName, roomId)
+}
+
+func (rm *roomManager) deleteRoomById(roomKey string) error {
+
+	delete(rm.rooms, roomKey)
+
+	return nil
+}
+
+func (rm *roomManager) deleteRoom(w http.ResponseWriter, r *http.Request) {
+	enableCors(w, r)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	vars := mux.Vars(r)
+	roomId := vars["id"]
+
+	_, roomFound := rm.rooms[roomId]
+
+	if roomFound != true {
+		fmt.Println("The room listed was not found")
+		message := "Room %v does not exist :("
+		sendResponse(w, http.StatusNotFound, false, message, nil, nil)
+		return
+	}
+
+	rm.deleteRoomById(roomId)
+
+	fmt.Printf("Deleted room with id %v\n", roomId)
+
+	message := "Room %v has been removed :)"
+	sendResponse(w, http.StatusOK, true, message, nil, nil)
+}
+
+func (rm *roomManager) checkAllRoomsExpired() error {
+
+	countRemoved := 0
+	for _, room := range rm.rooms {
+		if room.isRoomExpired() {
+			rm.deleteRoomById(room.id)
+			countRemoved++
+		}
+	}
+
+	fmt.Println("# of expired rooms removed: ", countRemoved)
+	return nil
 }
 
 func (rm *roomManager) startGame(w http.ResponseWriter, r *http.Request) {
@@ -1324,6 +1401,8 @@ func (rm *roomManager) sseGameStateHandler(w http.ResponseWriter, r *http.Reques
 	//NOTE: Add response for room not found
 	if roomFound != true {
 		fmt.Println("The room listed was not found")
+		message := "Room could not be found"
+		sendResponse(w, http.StatusNotFound, false, message, nil, nil)
 		return
 	}
 
@@ -1439,11 +1518,26 @@ func main() {
 	r.HandleFunc("/rooms", roomManager.addNewRoom).Methods("POST")
 	r.HandleFunc("/rooms/{id}/join", roomManager.joinRoom).Methods("POST")
 	r.HandleFunc("/rooms/{id}/start", roomManager.startGame).Methods("POST")
+	r.HandleFunc("/rooms/{id}/delete", roomManager.deleteRoom).Methods("DELETE")
 	r.HandleFunc("/rooms/{roomId}/{playerId}/action", roomManager.processGameAction).Methods("POST", "OPTIONS")
 	r.HandleFunc("/rooms", roomManager.getRooms).Methods("GET")
 	r.HandleFunc("/rooms/{roomId}/{playerId}/state", roomManager.sseGameStateHandler).Methods("GET")
 
 	fmt.Println("Server is up!")
+
+	//Periodically check for expired rooms to be deleted
+	expiredRoomTicker := time.NewTicker(1 * time.Minute) // Ticks every minute
+	defer expiredRoomTicker.Stop()
+
+	go func() {
+		for {
+			select {
+			case t := <-expiredRoomTicker.C:
+				roomManager.checkAllRoomsExpired()
+				fmt.Println("Chekcing expired rooms at: ", t)
+			}
+		}
+	}()
 
 	err := http.ListenAndServe(":8080", r)
 

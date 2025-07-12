@@ -13,10 +13,6 @@
 export function useRooms() {
 	let rooms = $state({})
 
-	$effect(() => {
-		$inspect(rooms)
-	})
-
 	async function fetchRooms() {
 		const serverURL = import.meta.env.VITE_API_URL;
 

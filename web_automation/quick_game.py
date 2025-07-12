@@ -17,6 +17,7 @@ if __name__ == "__main__":
 
     assert "BringTen" in driver.title
 
+    time.sleep(1)
     wait = WebDriverWait(driver, 2)
     elem = wait.until(EC.element_to_be_clickable((By.ID, "create_game_tab")))
     # elem = driver.find_element(By.ID, "create_game_tab")
