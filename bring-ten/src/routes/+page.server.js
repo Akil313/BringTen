@@ -3,6 +3,7 @@ import { fail } from '@sveltejs/kit';
 import * as db from '$lib/server/database'
 import * as utils from '$lib/utils'
 import { useRooms } from '$lib/rooms.svelte';
+import { apiURL } from '$lib/config';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params }) {
@@ -34,7 +35,7 @@ export const actions = {
 		const playerName = String(data.get('name'));
 
 		let respData = null
-		const url = `http://localhost:8080/rooms/${roomId}/join`
+		const url = `${apiURL}/rooms/${roomId}/join`
 		try {
 			let response = await fetch(url, {
 				method: "POST",
@@ -77,7 +78,7 @@ export const actions = {
 
 		const data = await request.formData();
 
-		const url = "http://localhost:8080/rooms"
+		const url = `${apiURL}/rooms`
 
 		let respData = null
 		try {
