@@ -17,8 +17,9 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var SCORE_LIMIT int = 3
-var HAND_SIZE int = 3
+var SCORE_LIMIT int = 6
+var HAND_SIZE int = 6
+var EXPIRED_TIME float64 = 15.0
 var allowedOrigins []string
 
 type httpResponse struct {
@@ -1526,7 +1527,7 @@ func main() {
 	fmt.Println("Server is up!")
 
 	//Periodically check for expired rooms to be deleted
-	expiredRoomTicker := time.NewTicker(1 * time.Minute) // Ticks every minute
+	expiredRoomTicker := time.NewTicker(time.Duration(EXPIRED_TIME) * time.Minute) // Ticks every minute
 	defer expiredRoomTicker.Stop()
 
 	go func() {
