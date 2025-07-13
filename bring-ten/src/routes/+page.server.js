@@ -69,8 +69,8 @@ export const actions = {
 
 		const playerId = respData.data.player_id
 
-		cookies.set('player_id', playerId, { path: '/' })
-		cookies.set('player_name', playerName, { path: '/' })
+		cookies.set('player_id', playerId, { secure: false, path: '/' })
+		cookies.set('player_name', playerName, { secure: false, path: '/' })
 
 		redirect(303, `/games/${roomId}`)
 	},
@@ -118,8 +118,8 @@ export const actions = {
 
 		const playerId = respData.data.host_id
 
-		cookies.set('player_id', playerId, { path: '/' })
-		cookies.set('player_name', playerName, { path: '/' })
+		cookies.set('player_id', playerId, { secure: false, path: '/' })
+		cookies.set('player_name', playerName, { secure: false, path: '/' })
 
 		return redirect(303, `games/${roomId}`)
 	}
