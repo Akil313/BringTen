@@ -3,6 +3,7 @@
 	import PlayingCard from '$lib/components/PlayingCard.svelte';
 	// @ts-ignore
 	import Scalable from 'scalable';
+	import { publicApiURL } from '$lib/config/public.js';
 
 	/** @typedef {Object} GameState
 	 * @property {string} name
@@ -138,7 +139,7 @@
 	 * @param {MouseEvent} event
 	 */
 	async function startGameHandler(event) {
-		const startUrl = `http://165.227.221.32:8080/rooms/${roomId}/start`;
+		const startUrl = `${publicApiURL}/rooms/${roomId}/start`;
 		const resp = await fetch(startUrl, {
 			method: 'POST',
 			body: JSON.stringify({
@@ -176,7 +177,7 @@
 			return;
 		}
 
-		const playCardUrl = `http://165.227.221.32:8080/rooms/${roomId}/${playerId}/action`;
+		const playCardUrl = `${publicApiURL}/rooms/${roomId}/${playerId}/action`;
 		const resp = await fetch(playCardUrl, {
 			method: 'POST',
 			headers: {
@@ -194,7 +195,7 @@
 
 	const roomId = data.slug;
 	const playerId = data.playerId;
-	const sseUrl = `http://165.227.221.32:8080/rooms/${roomId}/${playerId}/state`; // Your SSE endpoint
+	const sseUrl = `${publicApiURL}/rooms/${roomId}/${playerId}/state`; // Your SSE endpoint
 
 	let selectedCard = $state();
 

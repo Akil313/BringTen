@@ -3,7 +3,7 @@ import { fail } from '@sveltejs/kit';
 import * as db from '$lib/server/database'
 import * as utils from '$lib/utils'
 import { useRooms } from '$lib/rooms.svelte';
-import { apiURL } from '$lib/config';
+import { apiURL } from '$lib/config/private';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params }) {

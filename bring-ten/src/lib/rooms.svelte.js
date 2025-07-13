@@ -1,3 +1,5 @@
+import { PUBLIC_API_URL } from "$env/static/public";
+
 /** 
  * @typedef {Object} Room
  * @property {string} id
@@ -14,7 +16,7 @@ export function useRooms() {
 	let rooms = $state({})
 
 	async function fetchRooms() {
-		const serverURL = import.meta.env.VITE_API_URL;
+		const serverURL = PUBLIC_API_URL;
 
 		try {
 
