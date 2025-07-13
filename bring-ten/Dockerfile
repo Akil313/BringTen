@@ -3,8 +3,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
+ARG PUBLIC_API_URL
+ENV PUBLIC_API_URL=$PUBLIC_API_URL
+ARG API_URL
+ENV API_URL=$API_URL
 RUN npm run build
 RUN npm prune --production
 
@@ -12,7 +14,6 @@ RUN npm prune --production
 FROM node:22-alpine
 WORKDIR /app
 COPY --from=builder /app/build build/
-COPY --from=builder /app/.svelte-kit .svelte-kit/
 COPY --from=builder /app/node_modules node_modules/
 COPY package.json .
 EXPOSE 3000
