@@ -3,6 +3,7 @@
 	import PlayingCard from '$lib/components/PlayingCard.svelte';
 	// @ts-ignore
 	import Scalable from 'scalable';
+	import { apiURL } from '$lib/config.js';
 
 	/** @typedef {Object} GameState
 	 * @property {string} name
@@ -194,7 +195,7 @@
 
 	const roomId = data.slug;
 	const playerId = data.playerId;
-	const sseUrl = `http://localhost:8080/rooms/${roomId}/${playerId}/state`; // Your SSE endpoint
+	const sseUrl = `${apiURL}/rooms/${roomId}/${playerId}/state`; // Your SSE endpoint
 
 	let selectedCard = $state();
 
