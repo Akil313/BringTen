@@ -139,7 +139,7 @@
 	 * @param {MouseEvent} event
 	 */
 	async function startGameHandler(event) {
-		const startUrl = `http://localhost:8080/rooms/${roomId}/start`;
+		const startUrl = `${apiURL}/rooms/${roomId}/start`;
 		const resp = await fetch(startUrl, {
 			method: 'POST',
 			body: JSON.stringify({
@@ -177,7 +177,7 @@
 			return;
 		}
 
-		const playCardUrl = `http://localhost:8080/rooms/${roomId}/${playerId}/action`;
+		const playCardUrl = `${apiURL}/rooms/${roomId}/${playerId}/action`;
 		const resp = await fetch(playCardUrl, {
 			method: 'POST',
 			headers: {
@@ -196,6 +196,7 @@
 	const roomId = data.slug;
 	const playerId = data.playerId;
 	const sseUrl = `${apiURL}/rooms/${roomId}/${playerId}/state`; // Your SSE endpoint
+	console.log(sseUrl);
 
 	let selectedCard = $state();
 
