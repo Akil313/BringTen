@@ -22,7 +22,11 @@ jobs:
             git pull origin main
 
             echo "Writing bring-ten/.env.production from one secret"
-            echo "${{ secrets.PROD_ENV_FILE }}" > ./bring-ten/.env.production
+            rm -f bring-ten/.env.production
+            {
+              echo "PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}"
+              echo "API_URL=${{ secrets.API_URL }}"
+            } > bring-ten/.env.production
 
             docker compose down
             docker compose --env-file ./bring-ten/.env.production up -d --build
