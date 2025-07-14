@@ -12,6 +12,9 @@ jobs:
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.0
+        env:
+          PUBLIC_API_URL: ${{ secrets.PUBLIC_API_URL }}
+          API_URL: ${{ secrets.API_URL }}
         with:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USER }}
@@ -24,8 +27,8 @@ jobs:
             echo "Writing bring-ten/.env.production from one secret"
             rm -f bring-ten/.env.production
             {
-              echo "PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}"
-              echo "API_URL=${{ secrets.API_URL }}"
+              echo PUBLIC_API_URL=$PUBLIC_API_URL
+              echo API_URL=$API_URL
             } > bring-ten/.env.production
 
             docker compose down
