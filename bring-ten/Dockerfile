@@ -3,10 +3,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-ARG PUBLIC_API_URL
-ENV PUBLIC_API_URL=$PUBLIC_API_URL
-ARG API_URL
-ENV API_URL=$API_URL
 RUN npm run build
 RUN npm prune --production
 
