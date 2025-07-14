@@ -16,9 +16,7 @@ jobs:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
-          env:
-            PUBLIC_API_URL: ${{ secrets.PUBLIC_API_URL }}
-            API_URL: ${{ secrets.API_URL }}
+          envs: PUBLIC_API_URL, API_URL
           script: |
             cd /home/github/projects/BringTen
 
@@ -30,6 +28,9 @@ jobs:
               echo PUBLIC_API_URL=$PUBLIC_API_URL
               echo API_URL=$API_URL
             } > bring-ten/.env.production
+
+            echo "✅ File contents:"
+            cat bring-ten/.env.production || echo "❌ Failed to create .env.production"
 
             docker compose down
             docker compose --env-file ./bring-ten/.env.production up -d --build
