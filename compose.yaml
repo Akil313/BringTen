@@ -3,9 +3,6 @@ services:
     build:
       context: ./bring-ten/
       dockerfile: Dockerfile
-      args:
-        API_URL: ${API_URL}
-        PUBLIC_API_URL: ${PUBLIC_API_URL}
     ports:
       - "3000:3000"
     environment:
