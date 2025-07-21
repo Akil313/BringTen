@@ -11,10 +11,23 @@
 	function handleRoomJoin(event) {
 		console.log(event.detail);
 	}
+
+	/** @type { import('../../lib/rooms.svelte').RoomList } */
+	const testRoomList = {};
+
+	for (let i = 0; i < 20; i++) {
+		const id = `test-room-${i}`;
+		testRoomList[id] = {
+			id: id,
+			name: `Test Room ${i}`,
+			host: `Nigga #${i}`,
+			numPlayers: Math.floor(Math.random() * 4) + 1
+		};
+	}
 </script>
 
 <div class="flex w-full justify-center">
-	<div class="w-full max-w-full">
+	<div class=" max-w-full grow">
 		<form method="POST" action="?/join" class="mb-4 rounded bg-white px-8 pb-8 pt-6 shadow-md">
 			<div class="mb-4">
 				<label for="username" class="mb-2 block text-sm font-bold text-gray-700"> Username </label>
@@ -30,7 +43,7 @@
 			<div class="mb-4">
 				<input type="hidden" name="rooms" bind:value={roomId} />
 				<RoomTable
-					rooms={props.rooms}
+					rooms={testRoomList}
 					joinRoom={(id) => {
 						roomId = id;
 					}}

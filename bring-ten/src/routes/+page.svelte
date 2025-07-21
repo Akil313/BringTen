@@ -8,7 +8,7 @@
 	rooms = data.rooms;
 </script>
 
-<div class="flex justify-center">
+<div class="flex justify-center pt-6">
 	<header>
 		<title>BringTen</title>
 	</header>

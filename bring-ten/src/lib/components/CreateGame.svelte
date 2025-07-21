@@ -4,7 +4,7 @@
 </script>
 
 <div class="flex w-full justify-center">
-	<div class="w-full max-w-xs">
+	<div class="max-w-full grow">
 		<form action="?/create" method="POST" class="mb-4 rounded bg-white px-8 pb-8 pt-6 shadow-md">
 			<div class="mb-4">
 				<label for="username" class="mb-2 block text-sm font-bold text-gray-700"> Username </label>

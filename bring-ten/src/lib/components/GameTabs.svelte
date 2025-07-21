@@ -13,13 +13,13 @@
 	let activeTab = $state('join_game_tab');
 </script>
 
-<div class="flex max-w-[85%] flex-1 flex-col border border-blue-400">
-	<span>Game Tabs</span>
-	<div class="flex gap-x-2">
+<div class="flex max-w-[85%] flex-1 flex-col">
+	<div class="flex max-w-xl justify-around">
 		{#each tabs as tab}
 			<button
-				class="px-x cursor-pointer py-2 transition-colors duration-200"
-				class:bg-blue-400={activeTab == tab.id}
+				class="px-x w-full cursor-pointer rounded-tr-xl border-r-2 border-t-2 border-l-indigo-400 border-r-indigo-400 border-t-indigo-400 py-2 shadow-xl transition-colors duration-200"
+				class:bg-blue-400={activeTab === tab.id}
+				class:bg-white={activeTab !== tab.id}
 				id={tab.id}
 				onclick={() => (activeTab = tab.id)}
 			>
@@ -27,7 +27,6 @@
 			</button>
 		{/each}
 	</div>
-	<div class="my-2 h-1 bg-blue-200"></div>
 	<div>
 		{#if activeTab === 'create_game_tab'}
 			<CreateGame />
