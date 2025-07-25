@@ -43,7 +43,7 @@
 			<div class="mb-4">
 				<input type="hidden" name="rooms" bind:value={roomId} />
 				<RoomTable
-					rooms={testRoomList}
+					rooms={props.rooms}
 					joinRoom={(id) => {
 						roomId = id;
 					}}

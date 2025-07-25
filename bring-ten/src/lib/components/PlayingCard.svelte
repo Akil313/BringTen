@@ -38,7 +38,7 @@
 		type="button"
 		aria-label="Button"
 		onclick={isPlayable && isValid ? handleCardClick : () => {}}
-		class={`${customClass} relative aspect-[5/7] w-24 px-2 transition-transform ${isSelected ? '-translate-y-4' : ''} ${isPlayable && !isValid ? 'opacity-50' : ''} ${isPlayable && isValid ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+		class={`${customClass} relative w-20 transition-transform ${isSelected ? '-translate-y-4' : ''} ${isPlayable && !isValid ? 'opacity-50' : ''} ${isPlayable && isValid ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
 	>
 		{#await cardImages[cardString]}
 			<span>Card</span>

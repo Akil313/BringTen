@@ -269,57 +269,67 @@
 >
 	<div
 		id="canvas"
-		class="flex h-[720px] w-[1280px] bg-[#005c1d] bg-[url(/imgs/first-aid-kit.png)]"
+		class="flex h-[720px] w-[1280px] bg-[#282f28] bg-[url($lib/images/table.png)] text-white"
 		bind:this={canvas}
 	>
-		<div id="left-info-ctn" class="flex basis-1/6 flex-col px-4 pt-4">
-			<span class="text-[1.5em]">{gameState.roomName}</span>
-			<span class="text-[0.8em]"># of Players: {gameState.players.length} / 4</span>
-			<div class="flex flex-grow flex-col items-center justify-around">
-				<div class="flex flex-col items-center gap-y-4">
-					<span class="text-[1.2em]">Team 1 Points</span>
-					<p class="text-[1.5em]">{gameState.team1Score}</p>
-				</div>
-				<div class="flex flex-col items-center gap-y-4">
-					<p class="text-[1.5em]">{gameState.team2Score}</p>
-					<span class="text-[1.2em]">Team 2 Points</span>
-				</div>
-			</div>
+		<div id="left-info-ctn" class="basis-1/6 border border-red-600 px-4 pt-4">
+			<span class="absolute text-[1.5em]">{gameState.roomName}</span>
+			<span class="absolute top-[10%] text-[0.8em]"
+				># of Players: {gameState.players.length} / 4</span
+			>
+			{#if gameState?.gameStart === false}
+				<button
+					disabled={gameState.players.length !== 4}
+					onclick={startGameHandler}
+					class="relative left-[50%] top-[45%] -translate-x-1/2 rounded-lg p-2 {gameState.players
+						.length !== 4
+						? 'bg-gray-500 opacity-[50%]'
+						: 'bg-blue-300'}"
+				>
+					Start Game
+				</button>
+			{/if}
 		</div>
-		<div id="play-field-ctn" class="flex basis-4/6 flex-col justify-around border border-blue-500">
-			<div class="flex justify-around">
-				<span class="text-[1em]">{gameState.name}</span>
+		<div id="play-field-ctn" class="relative basis-4/6 border border-blue-500">
+			<div class="absolute left-[10%] -translate-x-1/2">
 				<span>Player Turn: {gameState.players[gameState.currTurn].name}</span>
 			</div>
-			<div class="flex justify-between border border-green-600">
-				<div>
-					<span class="text-[12%]">Trump:</span>
-					<PlayingCard
-						cardString={gameState.trump}
-						selectCard={handleSelectCard}
-						isSelected={false}
-						isPlayable={false}
-					/>
-				</div>
-				<div>
-					<span class="translate-8 absolute">{gameState.deck}</span>
-					<PlayingCard
-						class="opacity-50 blur-[2px]"
-						cardString={'back'}
-						selectCard={handleSelectCard}
-						isSelected={false}
-						isPlayable={false}
-					/>
-				</div>
+			<div class="relative left-[16%] top-[18%] inline-block -translate-x-1/2">
+				<span class="text-[1.2em]">Team 1 Points</span>
+				<p class="text-center text-[1.5em]">{gameState.team1Score}</p>
 			</div>
-			<div class="flex border border-red-400">
-				<span class="pr-4">LIFT: </span>
-				<div class="flex gap-x-4">
+			<div class="relative left-[68%] top-[18%] inline-block -translate-x-1/2">
+				<span class="text-[1.2em]">Team 2 Points</span>
+				<p class="text-center text-[1.5em]">{gameState.team2Score}</p>
+			</div>
+			<div class="absolute left-[30%] top-[35%] z-10 justify-between">
+				<PlayingCard
+					cardString={'back'}
+					selectCard={handleSelectCard}
+					isSelected={false}
+					isPlayable={false}
+				/>
+			</div>
+			<div id="deck" class="z-5 absolute left-[27%] top-[35%]">
+				<!--
+				<span
+					class="absolute left-[10%] top-[10%] z-10 origin-center -translate-x-1/2 -translate-y-1/2 text-[1.2em] text-black"
+					>{gameState.deck}
+				</span>
+				-->
+				<PlayingCard
+					class="z-5 opacity-100 blur-[1px]"
+					cardString={'back'}
+					selectCard={handleSelectCard}
+					isSelected={false}
+					isPlayable={false}
+				/>
+			</div>
+			<div class="absolute left-[47%] top-[28%] h-52 w-48">
+				<div class="z-1 absolute left-1/2 -translate-x-1/2">
 					{#if gameState.lift?.[0] === undefined}
-						<div
-							class="flex h-32 w-24 items-center justify-center rounded border-2 bg-gray-200 bg-opacity-40"
-						>
-							Player 1
+						<div class="flex h-28 w-20 rounded border-2 bg-orange-400 opacity-40">
+							<span class="absolute left-[10%] top-[10%]">Player 1</span>
 						</div>
 					{:else}
 						<PlayingCard
@@ -330,11 +340,11 @@
 							isPlayable={false}
 						/>
 					{/if}
+				</div>
+				<div class="z-2 absolute left-full top-1/2 -translate-x-full -translate-y-1/2">
 					{#if gameState.lift?.[1] === undefined}
-						<div
-							class="flex h-32 w-24 items-center justify-center rounded border-2 bg-gray-400 bg-opacity-40"
-						>
-							Player 2
+						<div class="flex h-28 w-20 rounded border-2 bg-purple-400 opacity-40">
+							<span class="absolute left-[10%] top-[30%] -translate-y-1/2">Player 2</span>
 						</div>
 					{:else}
 						<PlayingCard
@@ -345,11 +355,11 @@
 							isPlayable={false}
 						/>
 					{/if}
+				</div>
+				<div class="z-3 absolute left-1/2 top-full -translate-x-1/2 -translate-y-full">
 					{#if gameState.lift?.[2] === undefined}
-						<div
-							class="flex h-32 w-24 items-center justify-center rounded border-2 bg-gray-200 bg-opacity-40"
-						>
-							Player 3
+						<div class="flex h-28 w-20 rounded border-2 bg-orange-400 opacity-40">
+							<span class="absolute left-[10%] top-[60%]">Player 3</span>
 						</div>
 					{:else}
 						<PlayingCard
@@ -360,11 +370,11 @@
 							isPlayable={false}
 						/>
 					{/if}
+				</div>
+				<div class="z-4 absolute top-1/2 -translate-y-1/2">
 					{#if gameState.lift?.[3] === undefined}
-						<div
-							class="flex h-32 w-24 items-center justify-center rounded border-2 bg-gray-400 bg-opacity-40"
-						>
-							Player 4
+						<div class="flex h-28 w-20 rounded border-2 bg-purple-400 opacity-40">
+							<span class="absolute left-[10%] top-[70%] -translate-y-1/2"> Player 4 </span>
 						</div>
 					{:else}
 						<PlayingCard
@@ -377,42 +387,42 @@
 					{/if}
 				</div>
 			</div>
-			<div class="flex flex-col">
-				<span>Hand: </span>
-				<div class="">
-					{#each gameState.hand as c (c)}
-						<PlayingCard
-							cardString={c}
-							selectCard={handleSelectCard}
-							isSelected={selectedCard === c}
-							isValid={playerHand[c]}
-							isPlayable={true}
-						/>
-					{/each}
-				</div>
+			<div class="absolute left-[7%] top-[80%] flex">
+				{#each gameState.hand as c (c)}
+					<PlayingCard
+						cardString={c}
+						selectCard={handleSelectCard}
+						isSelected={selectedCard === c}
+						isValid={playerHand[c]}
+						isPlayable={true}
+					/>
+				{/each}
 			</div>
 			{#if !gameState.roundStart}
 				{#if gameState.position === gameState.currTurn && gameState.gameStart && gameState.playerBeg === false}
-					<div class="flex w-full flex-row justify-around">
+					<div class="absolute left-[50%] top-[62%] w-72 -translate-x-1/2">
 						<button
 							onclick={() => handleAction('STAY')}
-							class="rounded-lg border border-blue-500 bg-blue-300 p-2">Stay</button
+							class="absolute rounded-lg border border-blue-500 bg-blue-400 px-6 py-2">Stay</button
 						>
 						<button
 							onclick={() => handleAction('BEG')}
-							class="rounded-lg border border-blue-500 bg-blue-300 p-2">Beg</button
+							class="absolute left-full -translate-x-full rounded-lg border border-blue-500 bg-blue-400 px-6 py-2"
+							>Beg</button
 						>
 					</div>
 				{/if}
 				{#if gameState.position === gameState.dealer && gameState.gameStart && gameState.playerBeg === true}
-					<div class="flex w-full flex-row justify-around">
+					<div class="absolute left-[50%] top-[62%] w-72 -translate-x-1/2">
 						<button
 							onclick={() => handleAction('GO_AGAIN')}
-							class="rounded-lg border border-blue-500 bg-blue-300 p-2">Go Again</button
+							class="absolute w-32 rounded-lg border border-blue-500 bg-blue-400 py-2"
+							>Go Again</button
 						>
 						<button
 							onclick={() => handleAction('GIVE_ONE')}
-							class="rounded-lg border border-blue-500 bg-blue-300 p-2">Give 1</button
+							class="absolute left-full w-32 -translate-x-full rounded-lg border border-blue-500 bg-blue-400 py-2"
+							>Give One</button
 						>
 					</div>
 				{/if}
@@ -424,25 +434,13 @@
 				onclick={gameState.currTurn === gameState.position
 					? () => handleAction('PLAY_CARD', selectedCard)
 					: () => {}}
-				class="rounded-lg border border-blue-500 {gameState.currTurn === gameState.position &&
-				gameState.roundStart === true
+				class="absolute left-[80%] top-[85%] w-32 rounded-lg {gameState.currTurn ===
+					gameState.position && gameState.roundStart === true
 					? 'bg-blue-300'
-					: 'bg-gray-300'} p-2"
+					: 'bg-gray-500 opacity-[50%]'} p-2"
 			>
-				Submit Card
+				Play Card
 			</button>
-
-			{#if gameState?.gameStart === false}
-				<button
-					disabled={gameState.players.length !== 4}
-					onclick={startGameHandler}
-					class="rounded-lg border border-blue-500 p-2 {gameState.players.length !== 4
-						? 'bg-gray-200'
-						: 'bg-blue-300'}"
-				>
-					Start Game
-				</button>
-			{/if}
 		</div>
 		<div class="flex grow-0 basis-1/6 flex-col">
 			<span>position: {gameState.position}</span>
