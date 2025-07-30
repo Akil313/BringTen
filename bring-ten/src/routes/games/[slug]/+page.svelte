@@ -230,6 +230,15 @@
 
 	// Set up EventSource when component mounts
 	onMount(() => {
+		let trumpFlip;
+
+		onMount(() => {
+			trumpFlip = gsap.to('.trump-card', {
+				duration: 1
+			});
+			gsap.to('.box', { rotation: 27, x: 100, duration: 1 });
+		});
+
 		scalableInstance = new Scalable(main_container, {
 			align: 'center',
 			verticalAlign: 'center',
@@ -302,15 +311,27 @@
 				<span class="text-[1.2em]">Team 2 Points</span>
 				<p class="text-center text-[1.5em]">{gameState.team2Score}</p>
 			</div>
-			<div class="absolute left-[30%] top-[35%] z-10 justify-between">
-				<PlayingCard
-					cardString={'back'}
-					selectCard={handleSelectCard}
-					isSelected={false}
-					isPlayable={false}
-				/>
+			<div class="scene perspective-[600px] absolute left-[30%] top-[35%] z-10 justify-between">
+				<div class="trump-card relative">
+					<div class="card-face card-face-front">
+						<PlayingCard
+							cardString={'back'}
+							selectCard={handleSelectCard}
+							isSelected={false}
+							isPlayable={false}
+						/>
+					</div>
+					<div class="card-face card-face-back">
+						<PlayingCard
+							cardString={'back'}
+							selectCard={handleSelectCard}
+							isSelected={false}
+							isPlayable={false}
+						/>
+					</div>
+				</div>
 			</div>
-			<div id="deck" class="z-5 absolute left-[27%] top-[35%]">
+			<div id="deck" class="trump-card z-5 absolute left-[27%] top-[35%]">
 				<!--
 				<span
 					class="absolute left-[10%] top-[10%] z-10 origin-center -translate-x-1/2 -translate-y-1/2 text-[1.2em] text-black"

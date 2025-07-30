@@ -38,16 +38,16 @@
 		type="button"
 		aria-label="Button"
 		onclick={isPlayable && isValid ? handleCardClick : () => {}}
-		class={`${customClass} relative w-20 transition-transform ${isSelected ? '-translate-y-4' : ''} ${isPlayable && !isValid ? 'opacity-50' : ''} ${isPlayable && isValid ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+		class={`${customClass} relative border border-red-500 transition-transform ${isSelected ? '-translate-y-4' : ''} ${isPlayable && !isValid ? 'opacity-50' : ''} ${isPlayable && isValid ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
 	>
 		{#await cardImages[cardString]}
 			<span>Card</span>
 		{:then cardSvg}
 			<svg
-				class="h-full w-full"
+				class="h-48 w-20"
 				viewBox={cardString === 'back' ? '0 0 240 336' : '0 0 238.11073 332.5986'}
 			>
-				{@html cardSvg.default}
+				<g>{@html cardSvg.default}</g>
 			</svg>
 		{/await}
 	</button>

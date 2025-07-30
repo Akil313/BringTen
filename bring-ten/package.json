@@ -39,6 +39,7 @@
 		"vite": "^6.0.0"
 	},
 	"dependencies": {
+		"gsap": "^3.13.0",
 		"scalable": "^1.0.3"
 	}
 }

@@ -1,5 +1,7 @@
 <script>
 	import GameTabs from '$lib/components/GameTabs.svelte';
+	import { gsap } from 'gsap';
+	import { onMount } from 'svelte';
 
 	/** @type {import('./$types').PageProps} */
 	let { data } = $props();
@@ -13,4 +15,6 @@
 		<title>BringTen</title>
 	</header>
 	<GameTabs {rooms} />
+
+	<div class="box">Hey</div>
 </div>
