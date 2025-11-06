@@ -56,12 +56,12 @@ func sendResponse(w http.ResponseWriter, statusCode int, success bool, message s
 
 func stringToCard(cardString string) card {
 	if cardString == "" {
-		return card{value: "Z", suit: "Z"}
+		return card{value: "", suit: ""}
 	}
 
 	cardSlice := strings.Split(cardString, "x")
 	if len(cardSlice) < 2 {
-		return card{value: "Z", suit: "Z"}
+		return card{value: "", suit: ""}
 	}
 
 	return card{value: cardSlice[0], suit: cardSlice[1]}
@@ -93,7 +93,7 @@ func (c card) cardGameValue() int {
 
 func (c card) MarshalJSON() ([]byte, error) {
 	if c.value == "" && c.suit == "" {
-		return []byte(`""`), nil
+		return []byte(`"back"`), nil
 	}
 	return []byte(fmt.Sprintf(`"%sx%s"`, c.value, c.suit)), nil
 }
@@ -199,6 +199,7 @@ type gameState struct {
 	Name       string        `json:"name"`
 	Position   int           `json:"position"`
 	RoomName   string        `json:"room_name"`
+	HostId     string        `json:"host_id"`
 	Hand       []card        `json:"hand"`
 	ValidHand  []card        `json:"valid_hand"`
 	Deck       int           `json:"deck"`
@@ -428,7 +429,7 @@ func (r *room) canPlayerSeeHand(playerIdx int, hand []card) []card {
 		return hand
 	}
 
-	return []card{}
+	return []card{stringToCard(""), stringToCard(""), stringToCard(""), stringToCard(""), stringToCard(""), stringToCard("")}
 }
 
 func (r *room) startGame() {
@@ -906,6 +907,7 @@ func (r *room) broadcastState() {
 
 		newGameState := &gameState{
 			RoomName:   r.name,
+			HostId:     r.host.Id,
 			Name:       player.Name,
 			Position:   player.Pos,
 			Hand:       r.canPlayerSeeHand(player.Pos, player.hand),
