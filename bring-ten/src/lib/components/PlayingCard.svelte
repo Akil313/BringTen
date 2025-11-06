@@ -25,7 +25,6 @@
 	const value = cardStringArr[0];
 	const suit = cardStringArr[1];
 
-	const testImg = '../images/cards/CLUB-1.svg';
 	let cardImg = cardString ? cardImages[cardString] : cardImages['AxS'];
 
 	function handleCardClick() {
@@ -38,16 +37,13 @@
 		type="button"
 		aria-label="Button"
 		onclick={isPlayable && isValid ? handleCardClick : () => {}}
-		class={`${customClass} relative border border-red-500 transition-transform ${isSelected ? '-translate-y-4' : ''} ${isPlayable && !isValid ? 'opacity-50' : ''} ${isPlayable && isValid ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+		class={`${customClass} relative aspect-[5/7] w-20 border border-red-500 transition-transform ${isSelected ? '-translate-y-4' : ''} ${isPlayable && !isValid ? 'opacity-50' : ''} ${isPlayable && isValid ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
 	>
 		{#await cardImages[cardString]}
 			<span>Card</span>
 		{:then cardSvg}
-			<svg
-				class="h-48 w-20"
-				viewBox={cardString === 'back' ? '0 0 240 336' : '0 0 238.11073 332.5986'}
-			>
-				<g>{@html cardSvg.default}</g>
+			<svg class="h-full w-full">
+				{@html cardSvg.default}
 			</svg>
 		{/await}
 	</button>

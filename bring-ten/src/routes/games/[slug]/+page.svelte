@@ -1,94 +1,22 @@
 <script>
 	import { onMount } from 'svelte';
 	import PlayingCard from '$lib/components/PlayingCard.svelte';
-	// @ts-ignore
 	import Scalable from 'scalable';
 	import { publicApiURL } from '$lib/config/public.js';
-
-	/** @typedef {Object} GameState
-	 * @property {string} name
-	 * @property {number} position
-	 * @property {string} roomName
-	 * @property {string[]} hand
-	 * @property {string[]} validHand
-	 * @property {number} deck
-	 * @property {number} currTurn
-	 * @property {number} dealer
-	 * @property {Object[]} players
-	 * @property {number} players[].pos
-	 * @property {string} players[].id
-	 * @property {string} players[].name
-	 * @property {number} team1Score
-	 * @property {number} team2Score
-	 * @property {string} trump
-	 * @property {string[]} lift
-	 * @property {boolean} playerBeg
-	 * @property {boolean} playerStay
-	 * @property {boolean} roundStart
-	 * @property {boolean} gameStart
-	 * @property {string} winner
-	 */
-
-	/** @typedef {Object} SSEState
-	 * @property {string} name
-	 * @property {number} position
-	 * @property {string} room_name
-	 * @property {string[]} hand
-	 * @property {string[]} valid_hand
-	 * @property {number} deck
-	 * @property {number} curr_turn
-	 * @property {number} dealer
-	 * @property {Object[]} players
-	 * @property {number} players[].pos
-	 * @property {string} players[].id
-	 * @property {string} players[].name
-	 * @property {number} team_1_score
-	 * @property {number} team_2_score
-	 * @property {string} trump
-	 * @property {string[]} lift
-	 * @property {boolean} player_beg
-	 * @property {boolean} player_stay
-	 * @property {boolean} round_start
-	 * @property {boolean} game_start
-	 * @property {string} winner
-	 */
+	import gsap from 'gsap';
+	import GameAnimation from '$lib/components/GameAnimation.svelte';
+	import GameTabs from '$lib/components/GameTabs.svelte';
 
 	/**
 	 * Creates a new GameState object with default values
-	 * @returns {GameState} A new GameState object with default empty values
+	 * @returns {import('$lib/types.js').GameState} A new GameState object with default empty values
 	 */
 	function createEmptyGameState() {
-		if (roomId === 'test') {
-			return {
-				name: 'Lelouch',
-				position: 1,
-				roomName: 'The Test Empire',
-				hand: ['5xS', '3xD', 'KxS', '10xH', '8xC', '4xS'],
-				validHand: ['KxS', '5xS', '10xH'],
-				deck: 24,
-				currTurn: 1,
-				dealer: 1,
-				players: [
-					{ pos: 0, id: '38hd8s', name: 'Shirly' },
-					{ pos: 1, id: 'nn32d9', name: 'Lelouch' },
-					{ pos: 2, id: 'l30dii', name: 'C.C' },
-					{ pos: 3, id: 'ej2b35', name: 'Suzaku' }
-				],
-				team1Score: 0,
-				team2Score: 0,
-				trump: 'QxH',
-				lift: ['JxC'],
-				playerBeg: false,
-				playerStay: false,
-				roundStart: false,
-				gameStart: false,
-				winner: ''
-			};
-		}
 		return {
 			name: '',
 			position: -1,
 			roomName: '',
+			hostId: '',
 			hand: [],
 			validHand: [],
 			deck: 0,
@@ -109,13 +37,14 @@
 
 	/**
 	 * Updates the gameState object from the values from the SSE
-	 * @param {SSEState} state
+	 * @param {import('$lib/types.js').SSEState} state
 	 */
 	function updateGameState(state) {
 		return {
 			name: state.name,
 			position: state.position,
 			roomName: state.room_name,
+			hostId: state.host_id,
 			hand: state.hand,
 			validHand: state.valid_hand,
 			deck: state.deck,
@@ -168,6 +97,19 @@
 
 	/**
 	 * This handles starting the game
+	 * @param {import("$lib/types.js").GameState} prev
+	 * @param {import("$lib/types.js").GameState} curr
+	 */
+	function runAnimations(prev, curr) {
+		const gameStarted = prev.gameStart === false && curr.gameStart === true;
+
+		if (gameStarted) {
+			gameAnimation.goAnim1();
+		}
+	}
+
+	/**
+	 * This handles starting the game
 	 * @param {string} action
 	 * @param {string} cardPlayed
 	 */
@@ -199,7 +141,7 @@
 
 	let selectedCard = $state();
 
-	/** @type {GameState} */
+	/** @type {import('$lib/types.js').GameState} */
 	let gameState = $state.raw(createEmptyGameState());
 
 	/**
@@ -221,22 +163,30 @@
 	/** @type {Object<string, Boolean>} */
 	const playerHand = $derived(updatePlayerHand(gameState.hand, gameState.validHand));
 
+	let card_ghost_1 = 'w-20 aspect-[5/7] rounded border-2 bg-orange-400 opacity-40';
+	let card_ghost_2 = 'w-20 aspect-[5/7] rounded border-2 bg-purple-400 opacity-40';
+	const DECK_POS = 'left-[27%] top-[35%]';
+
 	/** @type {HTMLElement} */
 	let main_container;
 	/** @type {HTMLElement} */
 	let canvas;
 	/** @type {{ destroy?: () => void }} */
 	let scalableInstance;
+	let ready = $state(false);
+
+	/** @type GameAnimation */
+	let gameAnimation;
 
 	// Set up EventSource when component mounts
 	onMount(() => {
-		let trumpFlip;
+		const startGameBtn = document.getElementById('start-game-btn');
 
-		onMount(() => {
-			trumpFlip = gsap.to('.trump-card', {
-				duration: 1
-			});
-			gsap.to('.box', { rotation: 27, x: 100, duration: 1 });
+		const tl2 = gsap.timeline({ paused: true });
+		tl2.to('.shared-card-1', {
+			top: '10%',
+			left: '50%',
+			duration: 1
 		});
 
 		scalableInstance = new Scalable(main_container, {
@@ -244,6 +194,8 @@
 			verticalAlign: 'center',
 			maxScale: 1.3
 		});
+		ready = true;
+
 		if (roomId !== 'test') {
 			console.log(sseUrl);
 			const eventSource = new EventSource(sseUrl);
@@ -253,8 +205,11 @@
 				const state = JSON.parse(event.data);
 				console.log('Received new game state:', state);
 
+				let prevGameState = gameState;
 				// Update the store with the new game state
 				gameState = { ...updateGameState(state) };
+
+				runAnimations(prevGameState, gameState);
 			};
 
 			eventSource.onerror = function (error) {
@@ -273,7 +228,9 @@
 
 <div
 	id="main-container"
-	class="flex h-screen w-screen overflow-hidden bg-[#00131a] bg-[url(/imgs/cartographer.png)] text-lg"
+	class={ready
+		? 'visible-after-mount flex h-screen w-screen overflow-hidden bg-[#00131a] bg-[url(/imgs/cartographer.png)] text-lg'
+		: 'hidden-before-mount'}
 	bind:this={main_container}
 >
 	<div
@@ -288,7 +245,8 @@
 			>
 			{#if gameState?.gameStart === false}
 				<button
-					disabled={gameState.players.length !== 4}
+					disabled={playerId !== gameState.hostId}
+					id="start-game-btn"
 					onclick={startGameHandler}
 					class="relative left-[50%] top-[45%] -translate-x-1/2 rounded-lg p-2 {gameState.players
 						.length !== 4
@@ -300,56 +258,22 @@
 			{/if}
 		</div>
 		<div id="play-field-ctn" class="relative basis-4/6 border border-blue-500">
+			<GameAnimation bind:this={gameAnimation} />
 			<div class="absolute left-[10%] -translate-x-1/2">
 				<span>Player Turn: {gameState.players[gameState.currTurn].name}</span>
 			</div>
-			<div class="relative left-[16%] top-[18%] inline-block -translate-x-1/2">
+			<div class="absolute left-[10%] top-[18%]">
 				<span class="text-[1.2em]">Team 1 Points</span>
 				<p class="text-center text-[1.5em]">{gameState.team1Score}</p>
 			</div>
-			<div class="relative left-[68%] top-[18%] inline-block -translate-x-1/2">
+			<div class="absolute left-[75%] top-[18%]">
 				<span class="text-[1.2em]">Team 2 Points</span>
 				<p class="text-center text-[1.5em]">{gameState.team2Score}</p>
-			</div>
-			<div class="scene perspective-[600px] absolute left-[30%] top-[35%] z-10 justify-between">
-				<div class="trump-card relative">
-					<div class="card-face card-face-front">
-						<PlayingCard
-							cardString={'back'}
-							selectCard={handleSelectCard}
-							isSelected={false}
-							isPlayable={false}
-						/>
-					</div>
-					<div class="card-face card-face-back">
-						<PlayingCard
-							cardString={'back'}
-							selectCard={handleSelectCard}
-							isSelected={false}
-							isPlayable={false}
-						/>
-					</div>
-				</div>
-			</div>
-			<div id="deck" class="trump-card z-5 absolute left-[27%] top-[35%]">
-				<!--
-				<span
-					class="absolute left-[10%] top-[10%] z-10 origin-center -translate-x-1/2 -translate-y-1/2 text-[1.2em] text-black"
-					>{gameState.deck}
-				</span>
-				-->
-				<PlayingCard
-					class="z-5 opacity-100 blur-[1px]"
-					cardString={'back'}
-					selectCard={handleSelectCard}
-					isSelected={false}
-					isPlayable={false}
-				/>
 			</div>
 			<div class="absolute left-[47%] top-[28%] h-52 w-48">
 				<div class="z-1 absolute left-1/2 -translate-x-1/2">
 					{#if gameState.lift?.[0] === undefined}
-						<div class="flex h-28 w-20 rounded border-2 bg-orange-400 opacity-40">
+						<div class={`${card_ghost_1}`}>
 							<span class="absolute left-[10%] top-[10%]">Player 1</span>
 						</div>
 					{:else}
@@ -364,7 +288,7 @@
 				</div>
 				<div class="z-2 absolute left-full top-1/2 -translate-x-full -translate-y-1/2">
 					{#if gameState.lift?.[1] === undefined}
-						<div class="flex h-28 w-20 rounded border-2 bg-purple-400 opacity-40">
+						<div class={`${card_ghost_2}`}>
 							<span class="absolute left-[10%] top-[30%] -translate-y-1/2">Player 2</span>
 						</div>
 					{:else}
@@ -379,7 +303,7 @@
 				</div>
 				<div class="z-3 absolute left-1/2 top-full -translate-x-1/2 -translate-y-full">
 					{#if gameState.lift?.[2] === undefined}
-						<div class="flex h-28 w-20 rounded border-2 bg-orange-400 opacity-40">
+						<div class={`${card_ghost_1}`}>
 							<span class="absolute left-[10%] top-[60%]">Player 3</span>
 						</div>
 					{:else}
@@ -394,7 +318,7 @@
 				</div>
 				<div class="z-4 absolute top-1/2 -translate-y-1/2">
 					{#if gameState.lift?.[3] === undefined}
-						<div class="flex h-28 w-20 rounded border-2 bg-purple-400 opacity-40">
+						<div class={`${card_ghost_2}`}>
 							<span class="absolute left-[10%] top-[70%] -translate-y-1/2"> Player 4 </span>
 						</div>
 					{:else}
@@ -409,7 +333,7 @@
 				</div>
 			</div>
 			<div class="absolute left-[7%] top-[80%] flex">
-				{#each gameState.hand as c (c)}
+				{#each gameState.hand as c, i (c + i)}
 					<PlayingCard
 						cardString={c}
 						selectCard={handleSelectCard}
@@ -474,3 +398,14 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	.hidden-before-mount {
+		visibility: hidden;
+	}
+
+	.visible-before-mount {
+		visibility: visible;
+		transition: none;
+	}
+</style>
