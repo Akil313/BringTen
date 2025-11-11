@@ -1,5 +1,6 @@
 <script>
 	import GameTabs from '$lib/components/GameTabs.svelte';
+	import Header from '$lib/components/Header.svelte';
 	import { gsap } from 'gsap';
 	import { onMount } from 'svelte';
 
@@ -10,11 +11,7 @@
 	rooms = data.rooms;
 </script>
 
-<div class="flex justify-center pt-6">
-	<header>
-		<title>BringTen</title>
-	</header>
+<div class="mx-60 flex flex-col items-center gap-y-4 pt-10">
+	<Header />
 	<GameTabs {rooms} />
-
-	<div class="box">Hey</div>
 </div>

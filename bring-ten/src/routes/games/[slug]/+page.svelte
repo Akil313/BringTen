@@ -243,35 +243,71 @@
 			<span class="absolute top-[10%] text-[0.8em]"
 				># of Players: {gameState.players.length} / 4</span
 			>
-			{#if gameState?.gameStart === false}
+			{#if gameState?.gameStart === false && gameState.hostId === playerId}
 				<button
-					disabled={playerId !== gameState.hostId}
+					disabled={gameState.players.length !== 4}
 					id="start-game-btn"
 					onclick={startGameHandler}
 					class="relative left-[50%] top-[45%] -translate-x-1/2 rounded-lg p-2 {gameState.players
-						.length !== 4
-						? 'bg-gray-500 opacity-[50%]'
-						: 'bg-blue-300'}"
+						.length === 4
+						? 'bg-blue-400'
+						: 'bg-gray-500 opacity-[50%]'}
+					"
 				>
 					Start Game
 				</button>
 			{/if}
 		</div>
 		<div id="play-field-ctn" class="relative basis-4/6 border border-blue-500">
+			<!--
 			<GameAnimation bind:this={gameAnimation} />
-			<div class="absolute left-[10%] -translate-x-1/2">
-				<span>Player Turn: {gameState.players[gameState.currTurn].name}</span>
+			-->
+			<div id="deck" class="absolute left-[27%] top-[35%] z-[200] blur-[1px]">
+				<PlayingCard
+					cardString={'back'}
+					selectCard={() => {}}
+					isSelected={false}
+					isPlayable={false}
+				/>
+			</div>
+			<div class="absolute left-[30%] top-[35%] z-[201] aspect-[5/7] w-20 justify-between">
+				<div class="trump-card relative h-full w-full">
+					<div class="card-face card-face-front backface-hidden absolute h-full w-full">
+						<PlayingCard
+							cardString={'back'}
+							selectCard={() => {}}
+							isSelected={false}
+							isPlayable={false}
+						/>
+					</div>
+					<div class="card-face card-face-back backface-hidden absolute h-full w-full">
+						<PlayingCard
+							cardString={gameState.trump}
+							selectCard={() => {}}
+							isSelected={false}
+							isPlayable={false}
+						/>
+					</div>
+				</div>
 			</div>
 			<div class="absolute left-[10%] top-[18%]">
 				<span class="text-[1.2em]">Team 1 Points</span>
 				<p class="text-center text-[1.5em]">{gameState.team1Score}</p>
+			</div>
+			<div class="absolute left-[50%] top-[18%] -translate-x-1/2">
+				<span class="text-[1.2em]">Player Turn</span>
+				<p class="text-center text-[1.2em]">{gameState.players[gameState.currTurn].name}</p>
 			</div>
 			<div class="absolute left-[75%] top-[18%]">
 				<span class="text-[1.2em]">Team 2 Points</span>
 				<p class="text-center text-[1.5em]">{gameState.team2Score}</p>
 			</div>
 			<div class="absolute left-[47%] top-[28%] h-52 w-48">
-				<div class="z-1 absolute left-1/2 -translate-x-1/2">
+				<div
+					class="{gameState.lift?.[0] === undefined
+						? 'z-[1]'
+						: 'z-[6]'} absolute left-1/2 -translate-x-1/2"
+				>
 					{#if gameState.lift?.[0] === undefined}
 						<div class={`${card_ghost_1}`}>
 							<span class="absolute left-[10%] top-[10%]">Player 1</span>
@@ -286,7 +322,11 @@
 						/>
 					{/if}
 				</div>
-				<div class="z-2 absolute left-full top-1/2 -translate-x-full -translate-y-1/2">
+				<div
+					class="{gameState.lift?.[1] === undefined
+						? 'z-[2]'
+						: 'z-[7]'} absolute left-full top-1/2 -translate-x-full -translate-y-1/2"
+				>
 					{#if gameState.lift?.[1] === undefined}
 						<div class={`${card_ghost_2}`}>
 							<span class="absolute left-[10%] top-[30%] -translate-y-1/2">Player 2</span>
@@ -301,7 +341,11 @@
 						/>
 					{/if}
 				</div>
-				<div class="z-3 absolute left-1/2 top-full -translate-x-1/2 -translate-y-full">
+				<div
+					class="{gameState.lift?.[2] === undefined
+						? 'z-[3]'
+						: 'z-[8]'} absolute left-1/2 top-full -translate-x-1/2 -translate-y-full"
+				>
 					{#if gameState.lift?.[2] === undefined}
 						<div class={`${card_ghost_1}`}>
 							<span class="absolute left-[10%] top-[60%]">Player 3</span>
@@ -316,7 +360,11 @@
 						/>
 					{/if}
 				</div>
-				<div class="z-4 absolute top-1/2 -translate-y-1/2">
+				<div
+					class="{gameState.lift?.[3] === undefined
+						? 'z-[4]'
+						: 'z-[9]'} absolute top-1/2 -translate-y-1/2"
+				>
 					{#if gameState.lift?.[3] === undefined}
 						<div class={`${card_ghost_2}`}>
 							<span class="absolute left-[10%] top-[70%] -translate-y-1/2"> Player 4 </span>
@@ -372,20 +420,22 @@
 					</div>
 				{/if}
 			{/if}
-			<button
-				type="button"
-				aria-label="Button"
-				disabled={gameState.currTurn !== gameState.position || gameState.roundStart !== true}
-				onclick={gameState.currTurn === gameState.position
-					? () => handleAction('PLAY_CARD', selectedCard)
-					: () => {}}
-				class="absolute left-[80%] top-[85%] w-32 rounded-lg {gameState.currTurn ===
-					gameState.position && gameState.roundStart === true
-					? 'bg-blue-300'
-					: 'bg-gray-500 opacity-[50%]'} p-2"
-			>
-				Play Card
-			</button>
+			{#if gameState.roundStart}
+				<button
+					type="button"
+					aria-label="Button"
+					disabled={gameState.currTurn !== gameState.position || gameState.roundStart !== true}
+					onclick={gameState.currTurn === gameState.position
+						? () => handleAction('PLAY_CARD', selectedCard)
+						: () => {}}
+					class="absolute left-[80%] top-[85%] w-32 rounded-lg {gameState.currTurn ===
+						gameState.position && gameState.roundStart === true
+						? 'bg-blue-400'
+						: 'bg-gray-500 opacity-[50%]'} p-2"
+				>
+					Play Card
+				</button>
+			{/if}
 		</div>
 		<div class="flex grow-0 basis-1/6 flex-col">
 			<span>position: {gameState.position}</span>
